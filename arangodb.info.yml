@@ -1,0 +1,5 @@
+name: 'ArangoDB'
+type: 'module'
+description: 'Cache backend with ArangoDB Key-Value'
+package: 'Performance and scalability'
+core_version_requirement: '^10'

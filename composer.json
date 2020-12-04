@@ -1,0 +1,22 @@
+{
+    "name": "drupal/arangodb",
+    "description": "Cache backend with ArangoDB Key-Value",
+    "type": "drupal-module",
+    "homepage": "https://www.drupal.org/project/arangodb",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Andor",
+            "homepage": "https://www.drupal.org/u/sweetchuck",
+            "role": "maintainer"
+        }
+    ],
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/arangodb"
+    },
+    "require": {
+        "php": ">=8.1",
+        "sweetchuck/cache-backend-arangodb": "1.x-dev",
+        "sweetchuck/utils": "^1.0"
+    }
+}

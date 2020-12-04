@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * @file
+ * Install/uninstall hooks.
+ */
+
+declare(strict_types = 1);
+
+use ArangoDBClient\CollectionHandler as ArangoDbCollectionHandler;
+use Drupal\arangodb\Utils;
+use Drupal\Core\Cache\Cache;
+
+/**
+ * Implements hook_requirements().
+ */
+function arangodb_requirements($phase) {
+  $return = [];
+
+  if ($phase === 'runtime') {
+    $binMapping = Utils::groupCacheBinsByConnections(Cache::getBins());
+    foreach ($binMapping as $connectionId => $info) {
+      /** @var \ArangoDBClient\Connection $connection */
+      $connection = $info['connection'];
+      $collectionHandler = new ArangoDbCollectionHandler($connection);
+      $uri = Utils::connectionUri($connection->getOptions());
+
+      $return["arangodb_connection_{$connectionId}"] = [
+        'severity' => REQUIREMENT_OK,
+        'title' => t('ArangoDB: Connection OK'),
+        'value' => $uri,
+        'description' => [
+          '#theme' => 'item_list',
+          '#title' => t('Affected cache bins'),
+          '#items' => $info['binNames'],
+        ],
+      ];
+
+      try {
+        $collectionHandler->count(reset($info['binNames']));
+      }
+      catch (\Throwable $e) {
+        $return["arangodb_connection_{$connectionId}"]['severity'] = REQUIREMENT_ERROR;
+        $return["arangodb_connection_{$connectionId}"]['title'] = t('ArangoDB: Connection failed');
+        $return["arangodb_connection_{$connectionId}"]['value'] .= ' | ' . $e->getMessage();
+      }
+    }
+  }
+
+  return $return;
+}

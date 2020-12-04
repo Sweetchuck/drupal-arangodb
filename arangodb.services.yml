@@ -1,0 +1,146 @@
+parameters:
+  # region Connection
+
+  ##
+  # @see \ArangoDBClient\ConnectionOptions::OPTION_ENDPOINT
+  #
+  # Authentication related options can be specified in the settings.php.
+  # $settings['arangodb.connection_options.cache_backend_default'] = [
+  #   ArangoDbConnectionOptions::OPTION_AUTH_USER => 'me',
+  #   ArangoDbConnectionOptions::OPTION_AUTH_PASSWD => 'abcd1234',
+  # ];
+  ##
+  arangodb.connection.options.default:
+    endpoint: 'tcp://127.0.0.1:8529'
+    Connection: 'Close'
+    timeout: 3
+    Reconnect: true
+    policy: 'last'
+    createCollection: false
+    database: 'cache'
+  # endregion
+
+  # region Cache
+  arangodb.cache.schema_manager.options.default: {}
+#    ##
+#    # @see \ArangoDBClient\CollectionHandler::create
+#    # @see \Sweetchuck\CacheBackend\ArangoDb\SchemaManager::collectionOptions
+#    ##
+#    collectionOptions: {}
+#
+#    ##
+#    # @see \Sweetchuck\CacheBackend\ArangoDb\SchemaManager::indexDefinitions
+#    ##
+#    indexDefinitions: {}
+
+  arangodb.cache.backend.options.default:
+    collection_name_prefix: 'cache_'
+
+  arangodb.cache.validator.basic.options.any_char:
+    ##
+    # PSR-16 about the "key" and "tag":
+    # … following characters MUST NOT be supported by implementing libraries: {}()/\@: …
+    # But Drupal uses those invalid characters in keys and tags.
+    #
+    # @link https://www.php-fig.org/psr/psr-16/#12-definitions
+    # @link https://github.com/php-cache/integration-tests/blob/0.17.0/src/SimpleCacheTest.php#L87
+    #
+    # @see \Sweetchuck\CacheBackend\ArangoDb\Validator\BasicValidator::setOptions
+    ##
+    keyRegexPattern: ~
+    tagRegexPattern: ~
+  # endregion
+
+services:
+  # region Connection
+  arangodb.connection_pool.default:
+    class: 'ArrayObject'
+
+  arangodb.connection_factory.default:
+    class: 'Drupal\arangodb\ConnectionFactory'
+    arguments:
+      - '@settings'
+      - '@arangodb.connection_pool.default'
+      - 'default'
+      - '%arangodb.connection.options.default%'
+  # endregion
+
+  # region Serializer.
+  arangodb.serializer.base64:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\Serializer\Base64Serializer'
+
+  arangodb.serializer.igbinary:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\Serializer\IgbinarySerializer'
+
+  arangodb.serializer.igbinary_base64:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\Serializer\StackedSerializer'
+    arguments:
+      - '@arangodb.serializer.igbinary'
+      - '@arangodb.serializer.base64'
+
+  arangodb.serializer.json:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\Serializer\JsonSerializer'
+
+  arangodb.serializer.loafer:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\Serializer\LoaferSerializer'
+
+  arangodb.serializer.msgpack:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\Serializer\MsgPackSerializer'
+
+  arangodb.serializer.msgpack_base64:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\Serializer\StackedSerializer'
+    arguments:
+      - '@arangodb.serializer.msgpack'
+      - '@arangodb.serializer.base64'
+
+  arangodb.serializer.native:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\Serializer\NativeSerializer'
+  # endregion
+
+  # region Cache
+  arangodb.cache.document_converter.default:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\CacheDocumentConverter'
+
+  arangodb.cache.schema_manager.default:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\SchemaManager'
+    calls:
+      -
+        - 'setOptions'
+        -
+          - '%arangodb.cache.schema_manager.options.default%'
+
+  arangodb.cache.validator.basic:
+    class: 'Sweetchuck\CacheBackend\ArangoDb\Validator\BasicValidator'
+    calls:
+      -
+        - 'setOptions'
+        -
+          - '%arangodb.cache.validator.basic.options.any_char%'
+
+  cache.backend.arangodb_default:
+    class: 'Drupal\arangodb\Cache\BackendFactory'
+    arguments:
+      - '@arangodb.connection_factory.default'
+      - '@arangodb.cache.validator.basic'
+      - '@arangodb.cache.document_converter.default'
+      - '@arangodb.serializer.native'
+      - '@arangodb.cache.schema_manager.default'
+      - '@logger.channel.arangodb_cache_default'
+      - '%arangodb.cache.backend.options.default%'
+
+  cache.backend.arangodb_no_serializer:
+    class: 'Drupal\arangodb\Cache\BackendFactory'
+    arguments:
+      - '@arangodb.connection_factory.default'
+      - '@arangodb.cache.validator.basic'
+      - '@arangodb.cache.document_converter.default'
+      - '@arangodb.serializer.loafer'
+      - '@arangodb.cache.schema_manager.default'
+      - '@logger.channel.arangodb_cache_default'
+      - '%arangodb.cache.backend.options.default%'
+
+  logger.channel.arangodb_cache_default:
+    parent: 'logger.channel_base'
+    arguments:
+      - 'arangodb_cache_default'
+  # endregion
