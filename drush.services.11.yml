@@ -1,0 +1,8 @@
+services:
+  arangodb.commands:
+    class: 'Drupal\arangodb\Commands\DevelHelperQueueCommands'
+    arguments:
+      - '@queue'
+    tags:
+      -
+        name: 'drush.command'

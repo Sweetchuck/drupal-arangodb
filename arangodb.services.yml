@@ -51,6 +51,32 @@ parameters:
     tagRegexPattern: ~
   # endregion
 
+  # region Queue
+  arangodb.queue.schema_manager.options.default:
+    ##
+    # @link https://www.arangodb.com/docs/stable/http/collection.html#create-collection
+    ##
+    collectionOptions:
+      ##
+      # For unknown reason "computedValues" does not work.
+      ##
+      # computedValues:
+      #   -
+      #     name: 'created'
+      #     expression: 'RETURN DATE_NOW()'
+      #     overwrite: true
+      #     computeOn:
+      #       - 'insert'
+      keyOptions:
+        type: 'padded'
+
+  arangodb.queue.storage.options.shared:
+    collection_name_pattern: 'queue_shared'
+
+  arangodb.queue.storage.options.dedicated:
+    collection_name_pattern: 'queue_dedicated_{{ queue.name }}'
+  # endregion
+
 services:
   # region Connection
   arangodb.connection_pool.default:
@@ -143,4 +169,45 @@ services:
     parent: 'logger.channel_base'
     arguments:
       - 'arangodb_cache_default'
+  # endregion
+
+  # region Queue
+  arangodb.queue.storage.shared:
+    class: 'Drupal\arangodb\Queue\StorageFactory'
+    arguments:
+      - '@arangodb.connection_factory.default'
+      - '@arangodb.queue.document_converter.default'
+      - '@arangodb.queue.schema_manager.default'
+      - '@datetime.time'
+      - '@logger.channel.arangodb_queue_default'
+      - '%arangodb.queue.storage.options.shared%'
+
+  arangodb.queue.storage.dedicated:
+    class: 'Drupal\arangodb\Queue\StorageFactory'
+    arguments:
+      - '@arangodb.connection_factory.default'
+      - '@arangodb.queue.document_converter.default'
+      - '@arangodb.queue.schema_manager.default'
+      - '@datetime.time'
+      - '@logger.channel.arangodb_queue_default'
+      - '%arangodb.queue.storage.options.dedicated%'
+
+  arangodb.queue.document_converter.default:
+    class: 'Drupal\arangodb\Queue\DocumentConverter'
+    arguments:
+      - '@arangodb.serializer.native'
+      - '@datetime.time'
+
+  arangodb.queue.schema_manager.default:
+    class: 'Drupal\arangodb\Queue\SchemaManager'
+    calls:
+      -
+        - 'setOptions'
+        -
+          - '%arangodb.queue.schema_manager.options.default%'
+
+  logger.channel.arangodb_queue_default:
+    parent: 'logger.channel_base'
+    arguments:
+      - 'arangodb_queue_default'
   # endregion

@@ -42,14 +42,20 @@ class ConnectionFactory implements ConnectionFactoryInterface {
     ];
   }
 
+  /**
+   * @throws \ArangoDBClient\Exception
+   */
   public function get(): ArangoDbConnection {
     if (!isset($this->connections[$this->connectionName])) {
-      $auth_options = $this->settings->get(
-        "arangodb.connection.options.{$this->connectionName}",
+      // @todo Some keys are depend on the value of the "AuthType".
+      // "AuthUser" and "AuthPasswd" only make sens if the "AuthType" is "Basic".
+      $options = array_replace(
         $this->getDefaultAuthConnectionOptions(),
+        $this->parameters,
+        $this->settings->get("arangodb.connection.options.{$this->connectionName}", []),
       );
 
-      $this->connections[$this->connectionName] = new ArangoDbConnection($auth_options + $this->parameters);
+      $this->connections[$this->connectionName] = new ArangoDbConnection($options);
     }
 
     return $this->connections[$this->connectionName];
