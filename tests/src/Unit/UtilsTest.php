@@ -4,7 +4,6 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\arangodb\Unit;
 
-use ArrayObject;
 use Drupal\arangodb\Utils;
 use Drupal\Tests\UnitTestCase;
 
@@ -25,7 +24,7 @@ class UtilsTest extends UnitTestCase {
 
     return [
       'array' => [$expected, $values],
-      'ArrayAccess' => [$expected, new ArrayObject($values)],
+      'ArrayAccess' => [$expected, new \ArrayObject($values)],
     ];
   }
 

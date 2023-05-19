@@ -37,6 +37,7 @@ function arangodb_requirements($phase) {
       ];
 
       try {
+        // @todo May that collection is not exists yet.
         $collectionHandler->count(reset($info['binNames']));
       }
       catch (\Throwable $e) {

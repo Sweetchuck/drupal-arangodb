@@ -1,6 +1,10 @@
 # ArangoDB integrator
 
-This module uses ArangoDB as datastorage for different services.
+This module uses ArangoDB as data storage for different services.
+
+## ToDo
+
+* no yet.
 
 
 ## Features
@@ -30,6 +34,7 @@ the last part is custom. In this case it is `default`.
 This parameter is used by `arangodb.connection_factory.*` services.
 
 **DRUPAL_ROOT/sites/*/services.arangodb.yml**
+
 ```yaml
 parameters:
   arangodb.connection.options.default:
@@ -75,7 +80,6 @@ $settings['arangodb.connection.options.default'] = [
 ```php
 $settings['cache']['default'] = 'cache.backend.arangodb_default';
 $settings['cache']['bins']['config'] = 'cache.backend.arangodb_no_serializer';
-$settings['cache']['bins']['data'] = 'cache.backend.arangodb_default';
 ```
 
 
@@ -106,10 +110,16 @@ $settings['cache']['bins']['data'] = 'cache.backend.arangodb_default';
 
 **Remaining tasks:**
 
-1. tests
-2. documentation
-    1. setup - connection
-    2. setup - serializers
+1. advancedqueue integration
+2. tests
+3. documentation
+
+**settings.local.php**
+```php
+$settings['queue_default'] = 'arangodb.queue_core.storage.shared';
+$settings['queue_reliable_service_foo'] = 'arangodb.queue_core.storage.dedicated';
+//$settings['queue_service_bar'] = 'arangodb.queue_core.storage.dedicated';
+```
 
 
 ## Feature - Log

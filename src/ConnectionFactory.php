@@ -18,20 +18,44 @@ class ConnectionFactory implements ConnectionFactoryInterface {
 
   protected Settings $settings;
 
-  protected array $parameters = [];
-
   protected string $connectionName = '';
+
+  public function getConnectionName(): string {
+    return $this->connectionName;
+  }
+
+  protected array $connectionOptions = [];
+
+  public function getConnectionOptions(): array {
+    return $this->connectionOptions;
+  }
+
+  public function setConnectionOptions(array $connectionOptions): static {
+    $this->connectionOptions = $connectionOptions;
+
+    return $this;
+  }
+
+  public function getFinalConnectionOptions(): array {
+    // @todo Some keys are depend on the value of the "AuthType".
+    // "AuthUser" and "AuthPasswd" only make sens if the "AuthType" is "Basic".
+    return array_replace(
+      $this->getDefaultAuthConnectionOptions(),
+      $this->getConnectionOptions(),
+      $this->settings->get("arangodb.connection.options.{$this->connectionName}", []),
+    );
+  }
 
   public function __construct(
     Settings $settings,
     \ArrayAccess $connections,
     string $connectionName,
-    array $parameters
+    array $connectionOptions,
   ) {
     $this->settings = $settings;
     $this->connections = $connections;
     $this->connectionName = $connectionName;
-    $this->parameters = $parameters;
+    $this->connectionOptions = $connectionOptions;
   }
 
   protected function getDefaultAuthConnectionOptions(): array {
@@ -47,14 +71,7 @@ class ConnectionFactory implements ConnectionFactoryInterface {
    */
   public function get(): ArangoDbConnection {
     if (!isset($this->connections[$this->connectionName])) {
-      // @todo Some keys are depend on the value of the "AuthType".
-      // "AuthUser" and "AuthPasswd" only make sens if the "AuthType" is "Basic".
-      $options = array_replace(
-        $this->getDefaultAuthConnectionOptions(),
-        $this->parameters,
-        $this->settings->get("arangodb.connection.options.{$this->connectionName}", []),
-      );
-
+      $options = $this->getFinalConnectionOptions();
       $this->connections[$this->connectionName] = new ArangoDbConnection($options);
     }
 

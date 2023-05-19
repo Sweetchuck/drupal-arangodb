@@ -25,7 +25,7 @@ trait ConnectionTrait {
   protected string $uri = '';
 
   /**
-   * Keys are \ArangoDBClient\ConnectionOptions::OPTION_*
+   * Keys are \ArangoDBClient\ConnectionOptions::OPTION_*.
    *
    * @phpstan-var CacheBackendArangoDbConnectionOptions
    *
@@ -61,9 +61,9 @@ trait ConnectionTrait {
       ConnectionOptions::OPTION_AUTH_PASSWD => '',
       ConnectionOptions::OPTION_CONNECTION => 'Close',
       ConnectionOptions::OPTION_CONNECT_TIMEOUT => 3,
-      ConnectionOptions::OPTION_RECONNECT => true,
+      ConnectionOptions::OPTION_RECONNECT => TRUE,
       ConnectionOptions::OPTION_UPDATE_POLICY => UpdatePolicy::LAST,
-      ConnectionOptions::OPTION_CREATE => false,
+      ConnectionOptions::OPTION_CREATE => FALSE,
       ConnectionOptions::OPTION_DATABASE => $this->getCollectionName(),
     ];
   }
@@ -75,7 +75,7 @@ trait ConnectionTrait {
     return $this->getConnectionOptions() + $this->getDefaultConnectionOptions();
   }
 
-  protected ?Connection $connection = null;
+  protected ?Connection $connection = NULL;
 
   public function getConnection(): ?Connection {
     return $this->connection;
@@ -92,8 +92,6 @@ trait ConnectionTrait {
    * @throws \ArangoDBClient\Exception
    */
   protected function initConnection(): static {
-    $collectionName = $this->getCollectionName();
-
     if (!$this->connection) {
       $this->connection = new Connection($this->getFinalConnectionOptions());
     }
@@ -122,14 +120,13 @@ trait ConnectionTrait {
   }
 
   protected function resetConnection(): static {
-    $this->collectionHandler = null;
-    $this->collection = null;
-    $this->documentHandler = null;
+    $this->collectionHandler = NULL;
+    $this->collection = NULL;
+    $this->documentHandler = NULL;
 
     return $this;
   }
 
-  // region Property - collectionName
   protected string $collectionNamePattern = '';
 
   public function getCollectionNamePattern(): string {
@@ -159,10 +156,8 @@ trait ConnectionTrait {
       $this->getCollectionNamePlaceholderValues(),
     );
   }
-  // endregion
 
-  protected function initUri(): static
-  {
+  protected function initUri(): static {
     $options = $this->getFinalConnectionOptions();
     $this->uri = sprintf(
       '%s/%s#%s',
@@ -174,13 +169,11 @@ trait ConnectionTrait {
     return $this;
   }
 
-  protected function isStorageReadable(): bool
-  {
+  protected function isStorageReadable(): bool {
     return $this->collection && $this->collectionHandler;
   }
 
-  protected function isStorageWritable(): bool
-  {
+  protected function isStorageWritable(): bool {
     return $this->collection || $this->documentHandler;
   }
 

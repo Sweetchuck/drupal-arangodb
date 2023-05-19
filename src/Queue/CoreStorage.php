@@ -18,7 +18,21 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
 
-class Storage implements
+/**
+ * Queue item storage handler.
+ *
+ * Class name has to contains "Arangodb" in order to make it compatible with
+ * the `queue_ui` module. But it is just the first step, unfortunately there
+ * are several other blocker issues as well in the QueueUI API.
+ * So, it won't be supported.
+ *
+ * @see \Drupal\queue_ui\QueueUIManager::queueClassName
+ * @see \Drupal\queue_ui\Form\ItemDetailForm::buildForm
+ * @see \Drupal\queue_ui\QueueUIInterface::loadItem
+ * @see \Drupal\queue_ui\QueueUIInterface::releaseItem
+ * @see \Drupal\queue_ui\QueueUIInterface::deleteItem
+ */
+class CoreStorage implements
   ReliableQueueInterface,
   QueueGarbageCollectionInterface,
   DelayableQueueInterface,
@@ -27,7 +41,6 @@ class Storage implements
   use LoggerAwareTrait;
   use ConnectionTrait;
 
-  // region Property - queueName
   protected string $queueName = '';
 
   public function getQueueName(): string {
@@ -40,23 +53,19 @@ class Storage implements
 
     return $this;
   }
-  // endregion
 
-  // region Property - documentConverter
-  protected DocumentConverterInterface $documentConverter;
+  protected CoreDocumentConverterInterface $documentConverter;
 
-  public function getDocumentConverter(): DocumentConverterInterface {
+  public function getDocumentConverter(): CoreDocumentConverterInterface {
     return $this->documentConverter;
   }
 
-  public function setDocumentConverter(DocumentConverterInterface $documentConverter): static {
+  public function setDocumentConverter(CoreDocumentConverterInterface $documentConverter): static {
     $this->documentConverter = $documentConverter;
 
     return $this;
   }
-  // endregion
 
-  // region Property - schemaManager
   protected SchemaManagerInterface $schemaManager;
 
   public function getSchemaManager(): SchemaManagerInterface {
@@ -68,9 +77,7 @@ class Storage implements
 
     return $this;
   }
-  // endregion
 
-  // region Property - time
   protected TimeInterface $time;
 
   public function getTime(): TimeInterface {
@@ -82,13 +89,10 @@ class Storage implements
 
     return $this;
   }
-  // endregion
 
-  // region Property - logger
   public function getLogger(): ?LoggerInterface {
     return $this->logger;
   }
-  // endregion
 
   public function __construct(string $queueName) {
     $this
@@ -102,7 +106,6 @@ class Storage implements
     ];
   }
 
-  // region Interface - \Drupal\Core\Queue\QueueInterface
   /**
    * {@inheritdoc}
    *
@@ -120,8 +123,8 @@ class Storage implements
 
     try {
       $document = $this
-          ->getDocumentConverter()
-          ->dataToDocument($this->getQueueName(), $data);
+        ->getDocumentConverter()
+        ->dataToDocument($this->getQueueName(), $data);
       $this
         ->documentHandler
         ->insert($this->collection, $document);
@@ -148,7 +151,7 @@ class Storage implements
       return 0;
     }
 
-    $aql = <<< AQL
+    $query = <<< AQL
       FOR doc IN @@collection
         FILTER STARTS_WITH(doc.queue, @queueName)
         COLLECT WITH COUNT INTO length
@@ -156,7 +159,7 @@ class Storage implements
     AQL;
 
     $result = $this->executeStatement(
-      $aql,
+      $query,
       [
         '@collection' => $this->getCollectionName(),
         'queueName' => $this->getQueueName(),
@@ -179,7 +182,7 @@ class Storage implements
     $collectionName = $this->getCollectionName();
     $queueName = $this->getQueueName();
 
-    $aql = <<< AQL
+    $query = <<< AQL
       FOR doc IN @@collection
         FILTER
           doc.queue == @queueName
@@ -188,9 +191,9 @@ class Storage implements
         SORT
             doc.created,
             doc._key
+        LIMIT 0, 1
         RETURN doc
     AQL;
-
 
     // Claim an item by updating its expire fields. If claim is not successful
     // another thread may have claimed the item in the meantime. Therefore loop
@@ -198,7 +201,7 @@ class Storage implements
     // are no unclaimed items left.
     while (TRUE) {
       $result = $this->executeStatement(
-        $aql,
+        $query,
         [
           '@collection' => $collectionName,
           'queueName' => $queueName,
@@ -227,9 +230,14 @@ class Storage implements
       // time from the lease, and will tend to reset items before the lease
       // should really expire.
       $document->set('expire', $this->getTime()->getCurrentTime() + $lease_time);
-      $this->documentHandler->update($document);
+      try {
+        $this->documentHandler->update($document);
 
-      return $item;
+        return $item;
+      }
+      catch (ArangoDBException $e) {
+        // Continue.
+      }
     }
   }
 
@@ -268,7 +276,7 @@ class Storage implements
       ->initConnection()
       ->initCollection($this->getCollectionName());
 
-    $aql = <<< AQL
+    $query = <<< AQL
       UPDATE {
         _key: @key,
         expire: 0
@@ -278,7 +286,7 @@ class Storage implements
 
     try {
       $this->executeStatement(
-        $aql,
+        $query,
         [
           '@collection' => $this->getCollectionName(),
           'key' => $item->item_id,
@@ -328,9 +336,7 @@ class Storage implements
     // but has not added any items to queue yet.
     $this->deleteItems();
   }
-  // endregion
 
-  // region Interface - \Drupal\Core\Queue\QueueGarbageCollectionInterface
   /**
    * {@inheritdoc}
    *
@@ -352,9 +358,7 @@ class Storage implements
       // @todo Error log.
     }
   }
-  // endregion
 
-  // region Interface - \Drupal\Core\Queue\DelayableQueueInterface
   /**
    * {@inheritdoc}
    *
@@ -369,7 +373,7 @@ class Storage implements
       ->initConnection()
       ->initCollection($this->getCollectionName());
 
-    $aql = <<< AQL
+    $query = <<< AQL
       UPDATE {
         _key: @key,
         expire: @expire
@@ -379,7 +383,7 @@ class Storage implements
 
     try {
       $this->executeStatement(
-        $aql,
+        $query,
         [
           '@collection' => $this->getCollectionName(),
           'key' => $item->item_id,
@@ -395,20 +399,20 @@ class Storage implements
 
     return FALSE;
   }
-  // endregion
 
   /**
    * @throws \ArangoDBClient\Exception
    */
   protected function deleteItems(): static {
-    $aql = <<< AQL
+    $query = <<< AQL
       FOR doc IN @@collection
-        FILTER doc.queueName = @queueName
+        FILTER
+          doc.queueName == @queueName
         REMOVE doc._key IN @@collection
     AQL;
 
     $this->executeStatement(
-      $aql,
+      $query,
       [
         '@collection' => $this->getCollectionName(),
         'queueName' => $this->getQueueName(),
@@ -453,7 +457,7 @@ class Storage implements
   protected function getExecuteStatementData(): array {
     return [
       'batchSize' => 1000,
-      'sanitize' => true,
+      'sanitize' => TRUE,
     ];
   }
 
@@ -478,7 +482,7 @@ class Storage implements
    * @throws \ArangoDBClient\Exception
    */
   protected function gcExpiredBatch(): static {
-    $aql = <<< AQL
+    $query = <<< AQL
       FOR doc IN @@collection
         FILTER
           STARTS_WITH(doc.queue, @queueNamePrefix)
@@ -488,7 +492,7 @@ class Storage implements
     AQL;
 
     $this->executeStatement(
-      $aql,
+      $query,
       [
         '@collection' => $this->getCollectionName(),
         'queueNamePrefix' => 'drupal_batch:',
@@ -500,7 +504,7 @@ class Storage implements
   }
 
   protected function gcExpiredItems(): static {
-    $aql = <<< AQL
+    $query = <<< AQL
       FOR doc IN @@collection
         FILTER
           doc.queue == @queueName
@@ -513,7 +517,7 @@ class Storage implements
 
     try {
       $this->executeStatement(
-        $aql,
+        $query,
         [
           '@collection' => $this->getCollectionName(),
           'queueName' => $this->getQueueName(),

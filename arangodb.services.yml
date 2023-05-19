@@ -51,8 +51,14 @@ parameters:
     tagRegexPattern: ~
   # endregion
 
-  # region Queue
-  arangodb.queue.schema_manager.options.default:
+  # region Queue core
+  arangodb.queue_core.storage.options.shared:
+    collection_name_pattern: 'queue_core_shared'
+
+  arangodb.queue_core.storage.options.dedicated:
+    collection_name_pattern: 'queue_core_dedicated_{{ queue.name }}'
+
+  arangodb.queue_core.schema_manager.options.default:
     ##
     # @link https://www.arangodb.com/docs/stable/http/collection.html#create-collection
     ##
@@ -69,12 +75,13 @@ parameters:
       #       - 'insert'
       keyOptions:
         type: 'padded'
+  # endregion
 
-  arangodb.queue.storage.options.shared:
-    collection_name_pattern: 'queue_shared'
-
-  arangodb.queue.storage.options.dedicated:
-    collection_name_pattern: 'queue_dedicated_{{ queue.name }}'
+  # region Queue advanced
+  arangodb.queue_advanced.schema_manager.options.default:
+    collectionOptions:
+      keyOptions:
+        type: 'padded'
   # endregion
 
 services:
@@ -91,7 +98,7 @@ services:
       - '%arangodb.connection.options.default%'
   # endregion
 
-  # region Serializer.
+  # region Serializer
   arangodb.serializer.base64:
     class: 'Sweetchuck\CacheBackend\ArangoDb\Serializer\Base64Serializer'
 
@@ -171,43 +178,64 @@ services:
       - 'arangodb_cache_default'
   # endregion
 
-  # region Queue
-  arangodb.queue.storage.shared:
-    class: 'Drupal\arangodb\Queue\StorageFactory'
+  # region Queue core
+  arangodb.queue_core.storage.shared:
+    class: 'Drupal\arangodb\Queue\CoreStorageFactory'
     arguments:
       - '@arangodb.connection_factory.default'
-      - '@arangodb.queue.document_converter.default'
-      - '@arangodb.queue.schema_manager.default'
+      - '@arangodb.queue_core.document_converter.default'
+      - '@arangodb.queue_core.schema_manager.default'
       - '@datetime.time'
-      - '@logger.channel.arangodb_queue_default'
-      - '%arangodb.queue.storage.options.shared%'
+      - '@logger.channel.arangodb_queue_core_default'
+      - '%arangodb.queue_core.storage.options.shared%'
 
-  arangodb.queue.storage.dedicated:
-    class: 'Drupal\arangodb\Queue\StorageFactory'
+  arangodb.queue_core.storage.dedicated:
+    class: 'Drupal\arangodb\Queue\CoreStorageFactory'
     arguments:
       - '@arangodb.connection_factory.default'
-      - '@arangodb.queue.document_converter.default'
-      - '@arangodb.queue.schema_manager.default'
+      - '@arangodb.queue_core.document_converter.default'
+      - '@arangodb.queue_core.schema_manager.default'
       - '@datetime.time'
-      - '@logger.channel.arangodb_queue_default'
-      - '%arangodb.queue.storage.options.dedicated%'
+      - '@logger.channel.arangodb_queue_core_default'
+      - '%arangodb.queue_core.storage.options.dedicated%'
 
-  arangodb.queue.document_converter.default:
-    class: 'Drupal\arangodb\Queue\DocumentConverter'
+  arangodb.queue_core.document_converter.default:
+    class: 'Drupal\arangodb\Queue\CoreDocumentConverter'
     arguments:
       - '@arangodb.serializer.native'
       - '@datetime.time'
 
-  arangodb.queue.schema_manager.default:
-    class: 'Drupal\arangodb\Queue\SchemaManager'
+  arangodb.queue_core.schema_manager.default:
+    class: 'Drupal\arangodb\Queue\CoreSchemaManager'
     calls:
       -
         - 'setOptions'
         -
-          - '%arangodb.queue.schema_manager.options.default%'
+          - '%arangodb.queue_core.schema_manager.options.default%'
 
-  logger.channel.arangodb_queue_default:
+  logger.channel.arangodb_queue_core_default:
     parent: 'logger.channel_base'
     arguments:
-      - 'arangodb_queue_default'
+      - 'arangodb_queue_core_default'
+  # endregion
+
+  # region Queue advanced
+  arangodb.queue_advanced.schema_manager.default:
+    class: 'Drupal\arangodb\Queue\AdvancedSchemaManager'
+    calls:
+      -
+        - 'setOptions'
+        -
+          - '%arangodb.queue_advanced.schema_manager.options.default%'
+
+  arangodb.queue_advanced.document_converter.default:
+    class: 'Drupal\arangodb\Queue\AdvancedDocumentConverter'
+    arguments:
+      - '@arangodb.serializer.native'
+      - '@datetime.time'
+
+  logger.channel.arangodb_queue_advanced_default:
+    parent: 'logger.channel_base'
+    arguments:
+      - 'arangodb_queue_advanced_default'
   # endregion

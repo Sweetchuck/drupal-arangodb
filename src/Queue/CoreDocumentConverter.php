@@ -8,26 +8,20 @@ use ArangoDBClient\Document;
 use Drupal\Component\Datetime\TimeInterface;
 use Sweetchuck\CacheBackend\ArangoDb\SerializerInterface;
 
-class DocumentConverter implements DocumentConverterInterface
-{
+class CoreDocumentConverter implements CoreDocumentConverterInterface {
 
-  //region Property - documentClass
   protected string $documentClass = Document::class;
 
-  public function getDocumentClass(): string
-  {
+  public function getDocumentClass(): string {
     return $this->documentClass ?: Document::class;
   }
 
-  public function setDocumentClass(string $documentClass): static
-  {
+  public function setDocumentClass(string $documentClass): static {
     $this->documentClass = $documentClass;
 
     return $this;
   }
-  //endregion
 
-  // region Property - serializer
   protected SerializerInterface $serializer;
 
   public function getSerializer(): SerializerInterface {
@@ -39,9 +33,7 @@ class DocumentConverter implements DocumentConverterInterface
 
     return $this;
   }
-  // endregion
 
-  // region Property - time
   protected TimeInterface $time;
 
   public function getTime(): TimeInterface {
@@ -53,7 +45,6 @@ class DocumentConverter implements DocumentConverterInterface
 
     return $this;
   }
-  // endregion
 
   public function __construct(
     SerializerInterface $serializer,

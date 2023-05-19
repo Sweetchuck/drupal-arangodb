@@ -11,15 +11,14 @@ use Psr\Log\LoggerInterface;
 use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
 
 /**
- * Queue factory implementation
+ * Queue factory implementation.
  *
  * There is no such thing as QueueFactoryInterface, but the ::get() method is mandatory.
  *
  * @see \Drupal\Core\Queue\QueueFactory::get
  */
-class StorageFactory {
+class CoreStorageFactory {
 
-  // region Property - connectionFactory
   protected ConnectionFactoryInterface $connectionFactory;
 
   public function getConnectionFactory(): ConnectionFactoryInterface {
@@ -31,23 +30,19 @@ class StorageFactory {
 
     return $this;
   }
-  // endregion
 
-  // region Property - documentConverter
-  protected DocumentConverter $documentConverter;
+  protected CoreDocumentConverter $documentConverter;
 
-  public function getDocumentConverter(): DocumentConverter {
+  public function getDocumentConverter(): CoreDocumentConverter {
     return $this->documentConverter;
   }
 
-  public function setDocumentConverter(DocumentConverter $documentConverter): static {
+  public function setDocumentConverter(CoreDocumentConverter $documentConverter): static {
     $this->documentConverter = $documentConverter;
 
     return $this;
   }
-  // endregion
 
-  // region Property - schemaManager
   protected SchemaManagerInterface $schemaManager;
 
   public function getSchemaManager(): SchemaManagerInterface {
@@ -59,9 +54,7 @@ class StorageFactory {
 
     return $this;
   }
-  // endregion
 
-  // region Property - time
   protected TimeInterface $time;
 
   public function getTime(): TimeInterface {
@@ -73,9 +66,7 @@ class StorageFactory {
 
     return $this;
   }
-  // endregion
 
-  // region Property - logger
   protected LoggerInterface $logger;
 
   public function getLogger(): LoggerInterface {
@@ -87,9 +78,7 @@ class StorageFactory {
 
     return $this;
   }
-  // endregion
 
-  // region Property - options
   protected array $options = [];
 
   public function getOptions(): array {
@@ -112,11 +101,10 @@ class StorageFactory {
       $this->getOptions(),
     );
   }
-  // endregion
 
   public function __construct(
     ConnectionFactoryInterface $connectionFactory,
-    DocumentConverterInterface $documentConverter,
+    CoreDocumentConverterInterface $documentConverter,
     SchemaManagerInterface $schemaManager,
     TimeInterface $time,
     LoggerInterface $logger,
@@ -134,7 +122,7 @@ class StorageFactory {
   public function get(string $name): QueueInterface {
     $options = $this->getFinalOptions();
 
-    $queue = new Storage($name);
+    $queue = new CoreStorage($name);
     $queue
       ->setCollectionNamePattern($options['collection_name_pattern'])
       ->setConnection($this->getConnectionFactory()->get())

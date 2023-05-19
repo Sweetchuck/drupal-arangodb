@@ -7,7 +7,7 @@ namespace Drupal\arangodb\Queue;
 use ArangoDBClient\CollectionHandler;
 use Sweetchuck\CacheBackend\ArangoDb\SchemaManager as SchemaManagerBase;
 
-class SchemaManager extends SchemaManagerBase {
+class CoreSchemaManager extends SchemaManagerBase {
 
   /**
    * {@inheritdoc}

@@ -66,5 +66,5 @@ class Utils {
       $uriParts['path'],
     );
   }
-  
+
 }

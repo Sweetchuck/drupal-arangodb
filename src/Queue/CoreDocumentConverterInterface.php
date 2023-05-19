@@ -6,7 +6,7 @@ namespace Drupal\arangodb\Queue;
 
 use ArangoDBClient\Document;
 
-interface DocumentConverterInterface {
+interface CoreDocumentConverterInterface {
 
   public function getDocumentClass(): string;
 

@@ -6,10 +6,12 @@ namespace Drupal\Tests\arangodb\Kernel\Cache;
 
 use Drupal\arangodb\Cache\Backend;
 use Drupal\arangodb\Cache\BackendFactory;
-use Drupal\arangodb\ConnectionFactory;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\Tests\arangodb\Traits\ConnectionTrait;
 
 class BackendTest extends KernelTestBase {
+
+  use ConnectionTrait;
 
   /**
    * {@inheritdoc}
@@ -21,8 +23,6 @@ class BackendTest extends KernelTestBase {
   ];
 
   public function testDummy() {
-    $backend = $this->createBackend();
-
     static::assertTrue(TRUE);
   }
 
@@ -40,24 +40,6 @@ class BackendTest extends KernelTestBase {
       $this->container->get('logger.channel.arangodb_cache_default'),
       $this->container->getParameter('arangodb.cache.backend.options.default'),
     );
-  }
-
-  protected function createConnectionFactory(): ConnectionFactory {
-    return new ConnectionFactory(
-      $this->container->get('settings'),
-      $this->container->get('arangodb.connection_pool.default'),
-      'default',
-      $this->getConnectionOptions(),
-    );
-  }
-
-  protected function getConnectionOptions(): array {
-    return [
-      'endpoint' => getenv('ARANGODB_CONNECTION_OPTION_ENDPOINT'),
-      'AuthUser' => getenv('ARANGODB_CONNECTION_OPTION_AUTHUSER'),
-      'AuthPasswd' => getenv('ARANGODB_CONNECTION_OPTION_AUTHPASSWD'),
-      'database' => getenv('ARANGODB_CONNECTION_OPTION_DATABASE'),
-    ];
   }
 
 }

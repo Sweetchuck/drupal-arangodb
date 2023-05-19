@@ -11,7 +11,7 @@ use Drush\Commands\DrushCommands;
 use Robo\Common\BuilderAwareTrait;
 use Robo\Contract\BuilderAwareInterface;
 
-class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInterface {
+class DevelHelperQueueCoreCommands extends DrushCommands implements BuilderAwareInterface {
 
   use BuilderAwareTrait;
 
@@ -28,16 +28,16 @@ class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInte
    * @param string $queueName
    *   The name of the queue to create.
    *
-   * @command arangodb:queue:create-queue
+   * @command arangodb:queue-core:create-queue
    *
    * @bootstrap full
    *
    * @hidden
    */
-  public function cmdArangodbQueueCreateQueueExecute(string $queueName) {
-      $this
-        ->getQueueHandler($queueName)
-        ->createQueue();
+  public function cmdCreateQueueExecute(string $queueName) {
+    $this
+      ->getQueueHandler($queueName)
+      ->createQueue();
   }
 
   /**
@@ -46,7 +46,7 @@ class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInte
    * @param string $queueName
    *   The name of the queue.
    *
-   * @command arangodb:queue:number-of-items
+   * @command arangodb:queue-core:number-of-items
    *
    * @option string $format
    *   Default: yaml
@@ -55,7 +55,7 @@ class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInte
    *
    * @hidden
    */
-  public function cmdArangodbQueueNumberOfItemsExecute(
+  public function cmdNumberOfItemsExecute(
     string $queueName,
     array $options = [
       'format' => 'yaml',
@@ -75,7 +75,7 @@ class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInte
    * @param string $queueName
    *   The name of the queue.
    *
-   * @command arangodb:queue:claim-item
+   * @command arangodb:queue-core:claim-item
    *
    * @option string $format
    *   Default: yaml
@@ -84,7 +84,7 @@ class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInte
    *
    * @hidden
    */
-  public function cmdArangodbQueueClaimItemExecute(
+  public function cmdClaimItemExecute(
     string $queueName,
     array $options = [
       'format' => 'yaml',
@@ -106,13 +106,13 @@ class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInte
    * @param string $itemId
    *   Queue item ID.
    *
-   * @command arangodb:queue:release-item
+   * @command arangodb:queue-core:release-item
    *
    * @bootstrap full
    *
    * @hidden
    */
-  public function cmdArangodbQueueReleaseItemExecute(
+  public function cmdReleaseItemExecute(
     string $queueName,
     string $itemId,
   ) {
@@ -130,13 +130,13 @@ class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInte
    * @param string $queueName
    *   The name of the queue to delete.
    *
-   * @command arangodb:queue:delete-queue
+   * @command arangodb:queue-core:delete-queue
    *
    * @bootstrap full
    *
    * @hidden
    */
-  public function cmdArangodbQueueDeleteQueueExecute(string $queueName) {
+  public function cmdDeleteQueueExecute(string $queueName) {
     $this
       ->getQueueHandler($queueName)
       ->deleteQueue();
@@ -147,17 +147,16 @@ class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInte
    *
    * @param string $queueName
    *   The name of the queue to add teh item to.
-   *
    * @param string $data
    *   Item data.
    *
-   * @command arangodb:queue:create-item
+   * @command arangodb:queue-core:create-item
    *
    * @bootstrap full
    *
    * @hidden
    */
-  public function cmdArangodbQueueCreateItemExecute(
+  public function cmdCreateItemExecute(
     string $queueName,
     string $data = '',
   ) {
@@ -176,17 +175,16 @@ class DevelHelperQueueCommands extends DrushCommands implements BuilderAwareInte
    *
    * @param string $queueName
    *   The name of the queue.
-   *
    * @param string $itemId
    *   Item ID.
    *
-   * @command arangodb:queue:delete-item
+   * @command arangodb:queue-core:delete-item
    *
    * @bootstrap full
    *
    * @hidden
    */
-  public function cmdArangodbQueueDeleteItemExecute(
+  public function cmdDeleteItemExecute(
     string $queueName,
     string $itemId = '',
   ) {

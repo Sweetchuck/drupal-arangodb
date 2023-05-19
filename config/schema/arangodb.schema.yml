@@ -1,0 +1,16 @@
+advancedqueue.backend.arangodb:
+  type: 'mapping'
+  mapping:
+    lease_time:
+      type: 'integer'
+      label: 'Lease time'
+    connection_factory:
+      type: 'string'
+      label: 'Connection factory'
+    storage_options:
+      type: 'mapping'
+      label: 'Storage options'
+      mapping:
+        collection_name_pattern:
+          type: 'string'
+          label: 'Collection name pattern'
