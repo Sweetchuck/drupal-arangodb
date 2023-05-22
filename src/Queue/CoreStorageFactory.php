@@ -21,6 +21,8 @@ class CoreStorageFactory {
 
   protected ConnectionFactoryInterface $connectionFactory;
 
+  protected string $connectionName = 'default';
+
   public function getConnectionFactory(): ConnectionFactoryInterface {
     return $this->connectionFactory;
   }
@@ -104,12 +106,15 @@ class CoreStorageFactory {
 
   public function __construct(
     ConnectionFactoryInterface $connectionFactory,
+    string $connectionName,
     CoreDocumentConverterInterface $documentConverter,
     SchemaManagerInterface $schemaManager,
     TimeInterface $time,
     LoggerInterface $logger,
     array $options,
   ) {
+    $this->connectionName = $connectionName;
+
     $this
       ->setConnectionFactory($connectionFactory)
       ->setDocumentConverter($documentConverter)
@@ -125,7 +130,7 @@ class CoreStorageFactory {
     $queue = new CoreStorage($name);
     $queue
       ->setCollectionNamePattern($options['collection_name_pattern'])
-      ->setConnection($this->getConnectionFactory()->get())
+      ->setConnection($this->getConnectionFactory()->get($this->connectionName))
       ->setSchemaManager($this->getSchemaManager())
       ->setDocumentConverter($this->getDocumentConverter())
       ->setTime($this->getTime())

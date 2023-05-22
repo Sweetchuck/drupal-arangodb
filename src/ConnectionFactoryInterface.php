@@ -8,6 +8,6 @@ use ArangoDBClient\Connection as ArangoDbConnection;
 
 interface ConnectionFactoryInterface {
 
-  public function get(): ArangoDbConnection;
+  public function get(string $name): ArangoDbConnection;
 
 }

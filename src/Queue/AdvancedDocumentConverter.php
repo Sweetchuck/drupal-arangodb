@@ -18,6 +18,7 @@ class AdvancedDocumentConverter implements AdvancedDocumentConverterInterface {
   }
 
   public function setDocumentClass(string $documentClass): static {
+    // @todo It has to be instance of \ArangoDBClient\Document.
     $this->documentClass = $documentClass;
 
     return $this;

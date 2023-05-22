@@ -4,16 +4,16 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\arangodb\Kernel\Plugin\AdvancedQueue\Backend;
 
-use ArangoDBClient\CollectionHandler;
 use Drupal\advancedqueue\Entity\Queue;
 use Drupal\advancedqueue\Entity\QueueInterface;
 use Drupal\advancedqueue\Job;
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\Site\Settings;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\arangodb\Traits\ConnectionTrait;
 
 /**
- * @coversDefaultClass \Drupal\arangodb\Plugin\AdvancedQueue\Backend\Arangodb
+ * @covers \Drupal\arangodb\Plugin\AdvancedQueue\Backend\Arangodb
  */
 class ArangodbTest extends KernelTestBase {
 
@@ -24,8 +24,6 @@ class ArangodbTest extends KernelTestBase {
     'arangodb',
   ];
 
-  protected string $collectionNamePrefix = 'test';
-
   protected int $currentTime = 0;
 
   /**
@@ -34,9 +32,8 @@ class ArangodbTest extends KernelTestBase {
    * @throws \Exception
    */
   protected function setUp(): void {
-    $this->collectionNamePrefix = 'test_arangodb_' . $this->randomMachineName();
-
     parent::setUp();
+    $this->setUpArangodbConnection();
 
     // Override the current time to control job timestamps.
     $this->currentTime = 635814000;
@@ -47,8 +44,9 @@ class ArangodbTest extends KernelTestBase {
     });
     $this->container->set('datetime.time', $time->reveal());
 
-    $connectionFactory = $this->container->get('arangodb.connection_factory.default');
-    $connectionFactory->setConnectionOptions($this->getConnectionOptions());
+    $all = Settings::getAll();
+    $all['arangodb.connection_options'] = $this->getConnectionOptions();
+    $this->container->set('settings', new Settings($all));
 
     $this->installSchema('advancedqueue', ['advancedqueue']);
   }
@@ -58,24 +56,8 @@ class ArangodbTest extends KernelTestBase {
    * @throws \ArangoDBClient\ClientException
    */
   protected function tearDown(): void {
-    $this->dropArangodbCollections();
+    $this->tearDownArangodbDropCollections($this->collectionNamePrefix);
     parent::tearDown();
-  }
-
-  /**
-   * @throws \ArangoDBClient\Exception
-   * @throws \ArangoDBClient\ClientException
-   */
-  protected function dropArangodbCollections() {
-    $connectionFactory = $this->createConnectionFactory();
-    $connection = $connectionFactory->get();
-    $collectionHandler = new CollectionHandler($connection);
-
-    foreach ($collectionHandler->getAllCollections() as $collectionName => $collection) {
-      if (str_starts_with($collectionName, $this->collectionNamePrefix)) {
-        $collectionHandler->drop($collectionName);
-      }
-    }
   }
 
   protected function createQueue(string $id, string $collection_name_pattern): QueueInterface {
@@ -85,7 +67,7 @@ class ArangodbTest extends KernelTestBase {
       'backend' => 'arangodb',
       'backend_configuration' => [
         'lease_time' => 5,
-        'connection_factory' => 'default',
+        'connection_name' => 'default',
         'storage_options' => [
           'collection_name_pattern' => "{$this->collectionNamePrefix}_queue_advanced_$collection_name_pattern",
         ],
@@ -102,17 +84,7 @@ class ArangodbTest extends KernelTestBase {
     return $queue;
   }
 
-  /**
-   * @covers ::deleteQueue
-   * @covers ::countJobs
-   * @covers ::enqueueJob
-   * @covers ::enqueueJobs
-   * @covers ::claimJob
-   * @covers ::onSuccess
-   * @covers ::onFailure
-   * @covers ::deleteJob
-   */
-  public function testQueue() {
+  public function testQueue(): void {
     $this->currentTime = 635814000;
 
     $job1 = Job::create('simple', ['test' => '1']);
@@ -209,9 +181,6 @@ class ArangodbTest extends KernelTestBase {
     static::assertNull($queue1->getBackend()->claimJob());
   }
 
-  /**
-   * @covers ::loadJob
-   */
   public function testLoadJob(): void {
     $job = Job::create('simple', ['test' => '1']);
 

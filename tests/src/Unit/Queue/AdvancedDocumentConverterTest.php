@@ -7,7 +7,6 @@ namespace Drupal\Tests\arangodb\Unit\Queue;
 use ArangoDBClient\Document;
 use Drupal\advancedqueue\Job;
 use Drupal\arangodb\Queue\AdvancedDocumentConverter;
-use Drupal\arangodb\Queue\AdvancedDocumentConverterInterface;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Tests\arangodb\Traits\TestTime;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +17,25 @@ use Sweetchuck\CacheBackend\ArangoDb\SerializerInterface;
  * @covers \Drupal\arangodb\Queue\AdvancedDocumentConverter
  */
 class AdvancedDocumentConverterTest extends TestCase {
+
+  public function testGetSetDocumentClass(): void {
+    $dc = $this->createDocumentConverter();
+    static::assertSame(
+      $dc->getDocumentClass(),
+      Document::class,
+      'default value is valid',
+    );
+
+    $dc->setDocumentClass('foo');
+    static::assertSame('foo', $dc->getDocumentClass());
+  }
+
+  public function testGetSetTime(): void {
+    $time = $this->createTime();
+    $dc = $this->createDocumentConverter();
+    $dc->setTime($time);
+    static::assertSame($time, $dc->getTime());
+  }
 
   public function casesJobToDocument(): array {
     return [
@@ -108,7 +126,7 @@ class AdvancedDocumentConverterTest extends TestCase {
     }
   }
 
-  protected function createDocumentConverter(): AdvancedDocumentConverterInterface {
+  protected function createDocumentConverter(): AdvancedDocumentConverter {
     return new AdvancedDocumentConverter(
       $this->createSerializer(),
       $this->createTime(),

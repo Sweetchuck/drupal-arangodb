@@ -1,4 +1,12 @@
 services:
+  arangodb.common.commands:
+    class: 'Drupal\arangodb\Commands\DevelHelperCommonCommands'
+    arguments:
+      - '@arangodb.connection_factory'
+    tags:
+      -
+        name: 'drush.command'
+
   arangodb.queue_core.commands:
     class: 'Drupal\arangodb\Commands\DevelHelperQueueCoreCommands'
     arguments:

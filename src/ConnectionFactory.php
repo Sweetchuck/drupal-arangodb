@@ -5,77 +5,67 @@ declare(strict_types = 1);
 namespace Drupal\arangodb;
 
 use ArangoDBClient\Connection as ArangoDbConnection;
-use ArangoDBClient\ConnectionOptions as ArangoDbConnectionOptions;
-use ArangoDBClient\DefaultValues as ArangoDbDefaultValues;
 use Drupal\Core\Site\Settings;
 
 class ConnectionFactory implements ConnectionFactoryInterface {
 
   /**
-   * @var \ArrayAccess<\ArangoDBClient\Connection>
+   * @var \ArrayAccess<string, \ArangoDBClient\Connection>
    */
   protected \ArrayAccess $connections;
 
+  protected array $connectionOptionsFromParameters = [];
+
   protected Settings $settings;
 
-  protected string $connectionName = '';
-
-  public function getConnectionName(): string {
-    return $this->connectionName;
+  public function __construct(
+    \ArrayAccess $connections,
+    array $connectionOptions,
+    Settings $settings,
+  ) {
+    $this->connections = $connections;
+    $this->connectionOptionsFromParameters = $connectionOptions;
+    $this->settings = $settings;
   }
 
-  protected array $connectionOptions = [];
-
-  public function getConnectionOptions(): array {
-    return $this->connectionOptions;
-  }
-
-  public function setConnectionOptions(array $connectionOptions): static {
-    $this->connectionOptions = $connectionOptions;
-
-    return $this;
-  }
-
-  public function getFinalConnectionOptions(): array {
+  public function getFinalConnectionOptions(string $name): array {
+    // @todo Validate. One of the $connectionOptionsFromSettings or
+    // $this->connectionOptionsFromParameters should contain the key.
+    //
     // @todo Some keys are depend on the value of the "AuthType".
     // "AuthUser" and "AuthPasswd" only make sens if the "AuthType" is "Basic".
-    return array_replace(
-      $this->getDefaultAuthConnectionOptions(),
-      $this->getConnectionOptions(),
-      $this->settings->get("arangodb.connection.options.{$this->connectionName}", []),
+    $connectionOptionsFromSettings = $this->settings->get('arangodb.connection_options', []);
+
+    $final = array_replace(
+      $this->connectionOptionsFromParameters['default'] ?? [],
+      $connectionOptionsFromSettings['default'] ?? [],
     );
-  }
 
-  public function __construct(
-    Settings $settings,
-    \ArrayAccess $connections,
-    string $connectionName,
-    array $connectionOptions,
-  ) {
-    $this->settings = $settings;
-    $this->connections = $connections;
-    $this->connectionName = $connectionName;
-    $this->connectionOptions = $connectionOptions;
-  }
+    if ($name !== 'default') {
+      $final = array_replace(
+        $final,
+        $this->connectionOptionsFromParameters[$name] ?? [],
+        $connectionOptionsFromSettings[$name] ?? [],
+      );
+    }
 
-  protected function getDefaultAuthConnectionOptions(): array {
-    return [
-      ArangoDbConnectionOptions::OPTION_AUTH_TYPE => ArangoDbDefaultValues::DEFAULT_AUTH_TYPE,
-      ArangoDbConnectionOptions::OPTION_AUTH_USER => NULL,
-      ArangoDbConnectionOptions::OPTION_AUTH_PASSWD => NULL,
-    ];
+    return array_filter(
+      $final,
+      function ($value): bool {
+        return $value !== NULL;
+      },
+    );
   }
 
   /**
    * @throws \ArangoDBClient\Exception
    */
-  public function get(): ArangoDbConnection {
-    if (!isset($this->connections[$this->connectionName])) {
-      $options = $this->getFinalConnectionOptions();
-      $this->connections[$this->connectionName] = new ArangoDbConnection($options);
+  public function get(string $name): ArangoDbConnection {
+    if (!isset($this->connections[$name])) {
+      $this->connections[$name] = new ArangoDbConnection($this->getFinalConnectionOptions($name));
     }
 
-    return $this->connections[$this->connectionName];
+    return $this->connections[$name];
   }
 
 }

@@ -5,19 +5,34 @@ parameters:
   # @see \ArangoDBClient\ConnectionOptions::OPTION_ENDPOINT
   #
   # Authentication related options can be specified in the settings.php.
-  # $settings['arangodb.connection_options.cache_backend_default'] = [
+  # use ArangoDBClient\ConnectionOptions as ArangoDbConnectionOptions;
+  # $settings['arangodb.connection_options']['default'] = [
   #   ArangoDbConnectionOptions::OPTION_AUTH_USER => 'me',
   #   ArangoDbConnectionOptions::OPTION_AUTH_PASSWD => 'abcd1234',
+  #   ArangoDbConnectionOptions::OPTION_DATABASE => $database['default']['default']['database'],
   # ];
   ##
-  arangodb.connection.options.default:
-    endpoint: 'tcp://127.0.0.1:8529'
-    Connection: 'Close'
-    timeout: 3
-    Reconnect: true
-    policy: 'last'
-    createCollection: false
-    database: 'cache'
+  arangodb.connection_options:
+    default:
+      ##
+      # Required.
+      ##
+      endpoint: 'tcp://127.0.0.1:8529'
+
+      AuthType: 'Basic'
+      AuthUser: ''
+      AuthPasswd: ''
+
+      ##
+      # Required.
+      ##
+      #database: 'cache'
+
+      Connection: 'Close'
+      timeout: 3
+      Reconnect: true
+      policy: 'last'
+      createCollection: false
   # endregion
 
   # region Cache
@@ -34,7 +49,12 @@ parameters:
 #    indexDefinitions: {}
 
   arangodb.cache.backend.options.default:
-    collection_name_prefix: 'cache_'
+    ##
+    # The "{{ bin }}" placeholder has to be there,
+    # because shared bins aren't supported yet.
+    # There is no dedicated field to store that information.
+    ##
+    collection_name_pattern: 'cache_{{ bin }}'
 
   arangodb.cache.validator.basic.options.any_char:
     ##
@@ -86,16 +106,15 @@ parameters:
 
 services:
   # region Connection
-  arangodb.connection_pool.default:
+  arangodb.connection_pool:
     class: 'ArrayObject'
 
-  arangodb.connection_factory.default:
+  arangodb.connection_factory:
     class: 'Drupal\arangodb\ConnectionFactory'
     arguments:
+      - '@arangodb.connection_pool'
+      - '%arangodb.connection_options%'
       - '@settings'
-      - '@arangodb.connection_pool.default'
-      - 'default'
-      - '%arangodb.connection.options.default%'
   # endregion
 
   # region Serializer
@@ -153,7 +172,8 @@ services:
   cache.backend.arangodb_default:
     class: 'Drupal\arangodb\Cache\BackendFactory'
     arguments:
-      - '@arangodb.connection_factory.default'
+      - '@arangodb.connection_factory'
+      - 'default'
       - '@arangodb.cache.validator.basic'
       - '@arangodb.cache.document_converter.default'
       - '@arangodb.serializer.native'
@@ -164,7 +184,8 @@ services:
   cache.backend.arangodb_no_serializer:
     class: 'Drupal\arangodb\Cache\BackendFactory'
     arguments:
-      - '@arangodb.connection_factory.default'
+      - '@arangodb.connection_factory'
+      - 'default'
       - '@arangodb.cache.validator.basic'
       - '@arangodb.cache.document_converter.default'
       - '@arangodb.serializer.loafer'
@@ -182,7 +203,8 @@ services:
   arangodb.queue_core.storage.shared:
     class: 'Drupal\arangodb\Queue\CoreStorageFactory'
     arguments:
-      - '@arangodb.connection_factory.default'
+      - '@arangodb.connection_factory'
+      - 'default'
       - '@arangodb.queue_core.document_converter.default'
       - '@arangodb.queue_core.schema_manager.default'
       - '@datetime.time'
@@ -192,7 +214,8 @@ services:
   arangodb.queue_core.storage.dedicated:
     class: 'Drupal\arangodb\Queue\CoreStorageFactory'
     arguments:
-      - '@arangodb.connection_factory.default'
+      - '@arangodb.connection_factory'
+      - 'default'
       - '@arangodb.queue_core.document_converter.default'
       - '@arangodb.queue_core.schema_manager.default'
       - '@datetime.time'

@@ -2,6 +2,7 @@
 
 This module uses ArangoDB as data storage for different services.
 
+
 ## ToDo
 
 * no yet.
@@ -12,12 +13,14 @@ This module uses ArangoDB as data storage for different services.
 | Feature                      | status             |
 |------------------------------|--------------------|
 | [Cache backend]              | &#x2705; POC ready |
+| [Queue]                      | &#x2705; POC ready |
+| [Advanced Queue backend]     | &#x2705; POC ready |
+| [Log]                        | not yet            |
 | [Session]                    | not yet            |
 | [Lock]                       | not yet            |
 | [Flood]                      | not yet            |
-| [Queue]                      | &#x2705; POC ready |
-| [Log]                        | not yet            |
 | [Webform submission storage] | not yet            |
+| [SearchAPI server]           | not yet            |
 | [Config entity storage]      | not yet            |
 | [Content entity storage]     | not yet            |
 | [Full database driver]       | not yet            |
@@ -83,6 +86,22 @@ $settings['cache']['bins']['config'] = 'cache.backend.arangodb_no_serializer';
 ```
 
 
+## Feature - Queue
+
+**Remaining tasks:**
+
+1. advancedqueue integration
+2. tests
+3. documentation
+
+**settings.local.php**
+```php
+$settings['queue_default'] = 'arangodb.queue_core.storage.shared';
+$settings['queue_reliable_service_foo'] = 'arangodb.queue_core.storage.dedicated';
+//$settings['queue_service_bar'] = 'arangodb.queue_core.storage.dedicated';
+```
+
+
 ## Feature - Session
 
 @todo list
@@ -104,22 +123,6 @@ $settings['cache']['bins']['config'] = 'cache.backend.arangodb_no_serializer';
 ## Feature - Flood
 
 @todo
-
-
-## Feature - Queue
-
-**Remaining tasks:**
-
-1. advancedqueue integration
-2. tests
-3. documentation
-
-**settings.local.php**
-```php
-$settings['queue_default'] = 'arangodb.queue_core.storage.shared';
-$settings['queue_reliable_service_foo'] = 'arangodb.queue_core.storage.dedicated';
-//$settings['queue_service_bar'] = 'arangodb.queue_core.storage.dedicated';
-```
 
 
 ## Feature - Log

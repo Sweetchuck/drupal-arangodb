@@ -4,9 +4,9 @@ advancedqueue.backend.arangodb:
     lease_time:
       type: 'integer'
       label: 'Lease time'
-    connection_factory:
+    connection_name:
       type: 'string'
-      label: 'Connection factory'
+      label: 'Connection name'
     storage_options:
       type: 'mapping'
       label: 'Storage options'

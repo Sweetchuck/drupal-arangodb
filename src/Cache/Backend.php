@@ -6,10 +6,11 @@ namespace Drupal\arangodb\Cache;
 
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
+use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
 use Sweetchuck\CacheBackend\ArangoDb\CacheItem;
 use Sweetchuck\CacheBackend\ArangoDb\CacheItemPool;
 
-class Backend implements CacheBackendInterface {
+class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   protected CacheItemPool $pool;
 
@@ -95,7 +96,12 @@ class Backend implements CacheBackendInterface {
     $item->set($array['data']);
 
     if (!empty($array['tags'])) {
-      $item->setTags($array['tags']);
+      try {
+        $item->setTags($array['tags']);
+      }
+      catch (\TypeError $e) {
+        throw new \AssertionError($e->getMessage(), 1, $e);
+      }
     }
 
     if (isset($array['expire']) && $array['expire'] !== CacheBackendInterface::CACHE_PERMANENT) {
@@ -163,6 +169,13 @@ class Backend implements CacheBackendInterface {
    */
   public function removeBin() {
     $this->pool->removeBin();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function invalidateTags(array $tags) {
+    $this->pool->invalidateTags($tags);
   }
 
 }

@@ -17,6 +17,8 @@ class BackendFactory implements CacheFactoryInterface {
 
   protected ConnectionFactoryInterface $connectionFactory;
 
+  protected string $connectionName = 'default';
+
   protected ValidatorInterface $validator;
 
   protected CacheDocumentConverterInterface $documentConverter;
@@ -27,45 +29,50 @@ class BackendFactory implements CacheFactoryInterface {
 
   protected LoggerInterface $logger;
 
-  protected array $parameters = [];
-
-  protected string $bin = '';
+  protected array $storageOptions = [];
 
   public function __construct(
     ConnectionFactoryInterface $connectionFactory,
+    string $connectionName,
     ValidatorInterface $validator,
     CacheDocumentConverterInterface $documentConverter,
     SerializerInterface $serializer,
     SchemaManagerInterface $schemaManager,
     LoggerInterface $logger,
-    array $parameters
+    array $storageOptions,
   ) {
     $this->connectionFactory = $connectionFactory;
+    $this->connectionName = $connectionName;
     $this->validator = $validator;
     $this->documentConverter = $documentConverter;
     $this->serializer = $serializer;
     $this->schemaManager = $schemaManager;
     $this->logger = $logger;
-    $this->parameters = $parameters;
+    $this->storageOptions = $storageOptions;
   }
 
   /**
    * {@inheritdoc}
    */
   public function get($bin) {
-    $this->bin = $bin;
-    $this->initParameters();
+    $storageOptions = $this->getFinalStorageOptions();
+    $collectionName = strtr(
+      $storageOptions['collection_name_pattern'],
+      [
+        '{{ bin }}' => $bin,
+      ],
+    );
+    $pool = $this->createPool();
+    $pool->setCollectionName($collectionName);
 
-    return new Backend($this->createPool());
+    return new Backend($pool);
   }
 
-  protected function initParameters(): static {
-    $this->parameters = array_replace_recursive(
-      $this->getDefaultParameters(),
-      $this->parameters,
+  protected function getFinalStorageOptions(): array {
+    return array_replace_recursive(
+      $this->getDefaultStorageOptions(),
+      $this->storageOptions,
     );
-
-    return $this;
   }
 
   protected function createPool(): CacheItemPool {
@@ -77,18 +84,14 @@ class BackendFactory implements CacheFactoryInterface {
       $this->logger,
     );
 
-    return $pool
-      ->setConnection($this->connectionFactory->get())
-      ->setCollectionName($this->getCollectionName());
+    $pool->setConnection($this->connectionFactory->get($this->connectionName));
+
+    return $pool;
   }
 
-  protected function getCollectionName(): string {
-    return $this->parameters['collection_name_prefix'] . $this->bin;
-  }
-
-  protected function getDefaultParameters(): array {
+  protected function getDefaultStorageOptions(): array {
     return [
-      'collection_name_prefix' => 'cache_',
+      'collection_name_pattern' => 'cache_{{ bin }}',
     ];
   }
 

@@ -23,7 +23,6 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -42,7 +41,6 @@ class Arangodb extends BackendBase implements
   SupportsListingJobsInterface {
 
   use LoggerAwareTrait;
-  use ContainerAwareTrait;
   use ConnectionTrait;
 
   protected ConnectionFactoryInterface $connectionFactory;
@@ -81,9 +79,9 @@ class Arangodb extends BackendBase implements
       $plugin_id,
       $plugin_definition,
       $container->get('datetime.time'),
+      $container->get('arangodb.connection_factory'),
       $container->get('arangodb.queue_advanced.schema_manager.default'),
       $container->get('arangodb.queue_advanced.document_converter.default'),
-      $container,
     );
   }
 
@@ -92,34 +90,15 @@ class Arangodb extends BackendBase implements
     $plugin_id,
     $plugin_definition,
     TimeInterface $time,
+    ConnectionFactoryInterface $connectionFactory,
     SchemaManagerInterface $schemaManager,
     AdvancedDocumentConverterInterface $documentConverter,
-    ContainerInterface $container,
   ) {
-    $this->setContainer($container);
+    $this->connectionFactory = $connectionFactory;
     $this
       ->setSchemaManager($schemaManager)
       ->setDocumentConverter($documentConverter);
     parent::__construct($configuration, $plugin_id, $plugin_definition, $time);
-  }
-
-  /**
-   * Service name prefix.
-   *
-   * @var string
-   */
-  protected string $connectionFactoryPrefix = 'arangodb.connection_factory';
-
-  protected function getConnectionFactoryPrefix(): string {
-    return $this->connectionFactoryPrefix;
-  }
-
-  protected function getConnectionFactoryServiceName(?string $suffix = NULL): string {
-    if ($suffix === NULL) {
-      $suffix = $this->getConfiguration()['connection_factory'];
-    }
-
-    return $this->getConnectionFactoryPrefix() . ".$suffix";
   }
 
   public function getQueueName(): string {
@@ -140,14 +119,16 @@ class Arangodb extends BackendBase implements
 
     $configuration = $this->getConfiguration();
     $this->setCollectionNamePattern($configuration['storage_options']['collection_name_pattern']);
-    $this->connectionFactory = $this->container->get($this->getConnectionFactoryServiceName());
-    $this->setConnection($this->connectionFactory->get());
+    $this->setConnection($this->connectionFactory->get($configuration['connection_name']));
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function defaultConfiguration() {
     $values = parent::defaultConfiguration();
     $values += [
-      'connection_factory' => 'default',
+      'connection_name' => 'default',
       'storage_options' => [
         'collection_name_pattern' => 'queue_advanced_shared',
       ],
@@ -160,13 +141,11 @@ class Arangodb extends BackendBase implements
     $config = $this->getConfiguration();
 
     $form = parent::buildConfigurationForm($form, $form_state);
-    $form['connection_factory'] = [
+    $form['connection_name'] = [
       '#type' => 'textfield',
       '#required' => TRUE,
-      '#title' => $this->t('Connection factory'),
-      '#default_value' => $config['connection_factory'],
-      '#field_prefix' => $this->getConnectionFactoryPrefix() . '.',
-      '#description' => $this->t('Last part of a service name <code>arangodb.connection_factory.*</code>'),
+      '#title' => $this->t('Connection name'),
+      '#default_value' => $config['connection_name'],
     ];
 
     $form['storage_options'] = [
@@ -219,14 +198,15 @@ class Arangodb extends BackendBase implements
     }
 
     $values = $form_state->getValue($form['#parents']);
-    $connection_factory_service_name = $this->getConnectionFactoryServiceName($values['connection_factory']);
-    if (!$this->container->has($connection_factory_service_name)) {
+    try {
+      $connection = $this->connectionFactory->get($values['connection_name']);
+    } catch (\Exception $e) {
       $form_state->setErrorByName(
-         "{$element_name_prefix}connection_factory",
+         "{$element_name_prefix}connection_name",
         $this->t(
-          'Service name does not exists: @service_name',
+          'Connection name does not exists: @connection_name',
           [
-            '@service_name' => $connection_factory_service_name,
+            '@connection_name' => $values['connection_name'],
           ],
         ),
       );

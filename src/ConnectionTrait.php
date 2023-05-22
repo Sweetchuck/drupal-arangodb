@@ -64,6 +64,7 @@ trait ConnectionTrait {
       ConnectionOptions::OPTION_RECONNECT => TRUE,
       ConnectionOptions::OPTION_UPDATE_POLICY => UpdatePolicy::LAST,
       ConnectionOptions::OPTION_CREATE => FALSE,
+      // @todo This is not a good default value.
       ConnectionOptions::OPTION_DATABASE => $this->getCollectionName(),
     ];
   }
