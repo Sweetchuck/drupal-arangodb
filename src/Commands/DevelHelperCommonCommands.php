@@ -27,7 +27,7 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
    * List all collection with the given name $prefix.
    *
    * @param string $prefix
-   *   Example values: "test_cache_", "test_queue_", "cache_", "queue_".
+   *   Example values: "cache_", "queue_core_", "queue_advanced_", "test_".
    *
    * @command arangodb:collection:list
    *
@@ -60,8 +60,11 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
       $collections = [];
     }
 
+    $collectionNames = array_keys($collections);
+    sort($collectionNames, \SORT_NATURAL);
+
     return CommandResult::dataWithExitCode(
-      array_keys($collections),
+      $collectionNames,
       $exitCode,
     );
   }
@@ -70,12 +73,12 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
    * Delete all collection with the given name $prefix.
    *
    * @param string $prefix
-   *   Example values: "test_cache_", "test_queue_", "cache_", "queue_".
+   *   Example values: "cache_", "queue_core_", "queue_advanced_", "test_".
    *
    * @command arangodb:collection:delete
    *
    * @option string $connection-name
-   *    Default: default
+   *   Default: default
    *
    * @bootstrap full
    *

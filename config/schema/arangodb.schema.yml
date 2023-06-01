@@ -14,3 +14,33 @@ advancedqueue.backend.arangodb:
         collection_name_pattern:
           type: 'string'
           label: 'Collection name pattern'
+    threshold:
+      type: 'mapping'
+      label: 'Threshold'
+      mapping:
+        success:
+          type: 'mapping'
+          label: 'Job state: Success'
+          mapping:
+            type:
+              type: 'string'
+              label: 'Type of the cleanup for the finished jobs'
+            amount:
+              type: 'integer'
+              label: 'Number of items'
+            time:
+              type: 'integer'
+              label: 'Number of days'
+        failure:
+          type: 'mapping'
+          label: 'Job state: Failure'
+          mapping:
+            type:
+              type: 'string'
+              label: 'Type of the cleanup for the finished jobs'
+            amount:
+              type: 'integer'
+              label: 'Number of items'
+            time:
+              type: 'integer'
+              label: 'Number of days'

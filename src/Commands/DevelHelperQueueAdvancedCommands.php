@@ -142,4 +142,18 @@ class DevelHelperQueueAdvancedCommands extends DrushCommands implements BuilderA
     return CommandResult::data($queue_backend->claimJob()?->toArray());
   }
 
+  /**
+   * @command arangodb:queue-advanced:clear
+   *
+   * @bootstrap full
+   *
+   * @hidden
+   */
+  public function cmdClearExecute(string $queueId) {
+    /** @var \Drupal\advancedqueue\Entity\QueueInterface $queue */
+    $queue = $this->queueStorage->load($queueId);
+    $queue_backend = $queue->getBackend();
+    $queue_backend->cleanupQueue();
+  }
+
 }

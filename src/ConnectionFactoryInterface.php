@@ -10,4 +10,6 @@ interface ConnectionFactoryInterface {
 
   public function get(string $name): ArangoDbConnection;
 
+  public function getConnectionNames(): array;
+
 }

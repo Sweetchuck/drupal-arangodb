@@ -16,11 +16,15 @@ use ArangoDBClient\UpdatePolicy;
  */
 trait ConnectionTrait {
 
-  protected ?Collection $collection;
+  protected ConnectionFactory $connectionFactory;
 
-  protected ?CollectionHandler $collectionHandler;
+  protected string $connectionName = 'default';
 
-  protected ?DocumentHandler $documentHandler;
+  protected ?Collection $collection = NULL;
+
+  protected ?CollectionHandler $collectionHandler = NULL;
+
+  protected ?DocumentHandler $documentHandler = NULL;
 
   protected string $uri = '';
 
@@ -94,7 +98,7 @@ trait ConnectionTrait {
    */
   protected function initConnection(): static {
     if (!$this->connection) {
-      $this->connection = new Connection($this->getFinalConnectionOptions());
+      $this->connection = $this->connectionFactory->get($this->connectionName);
     }
 
     if (!$this->collectionHandler) {
@@ -121,6 +125,7 @@ trait ConnectionTrait {
   }
 
   protected function resetConnection(): static {
+    $this->connection = NULL;
     $this->collectionHandler = NULL;
     $this->collection = NULL;
     $this->documentHandler = NULL;

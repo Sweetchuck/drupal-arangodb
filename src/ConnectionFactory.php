@@ -68,4 +68,14 @@ class ConnectionFactory implements ConnectionFactoryInterface {
     return $this->connections[$name];
   }
 
+  public function getConnectionNames(): array {
+    $set1 = array_keys($this->settings->get('arangodb.connection_options', []));
+    $set2 = array_keys($this->connectionOptionsFromParameters);
+    $names = array_unique(array_merge($set1, $set2));
+    sort($names);
+
+    return array_combine($names, $names);
+  }
+
+
 }

@@ -1,0 +1,37 @@
+parameters:
+  arangodb.logger.backend.options.default:
+    collectionNamePattern: 'log'
+
+  arangodb.logger.schema_manager.options.default:
+    collectionOptions:
+      keyOptions:
+        type: 'padded'
+
+services:
+  arangodb.logger.document_converter.default:
+    class: 'Drupal\arangodb\Logger\DocumentConverter'
+    arguments:
+      - '@logger.log_message_parser'
+      - '@arangodb.serializer.loafer'
+
+  arangodb.logger.schema_manager.default:
+    class: 'Drupal\arangodb\Logger\SchemaManager'
+    calls:
+      -
+        - 'setOptions'
+        -
+          - '%arangodb.logger.schema_manager.options.default%'
+
+  logger.arangodb_default:
+    class: 'Drupal\arangodb\Logger\Backend'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.logger.document_converter.default'
+      - '@arangodb.logger.schema_manager.default'
+      - '%arangodb.logger.backend.options.default%'
+    tags:
+      -
+        name: 'logger'
+      -
+        name: 'backend_overridable'

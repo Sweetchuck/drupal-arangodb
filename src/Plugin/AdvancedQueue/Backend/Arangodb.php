@@ -43,8 +43,6 @@ class Arangodb extends BackendBase implements
   use LoggerAwareTrait;
   use ConnectionTrait;
 
-  protected ConnectionFactoryInterface $connectionFactory;
-
   protected AdvancedDocumentConverterInterface $documentConverter;
 
   public function getDocumentConverter(): AdvancedDocumentConverterInterface {
@@ -132,19 +130,40 @@ class Arangodb extends BackendBase implements
       'storage_options' => [
         'collection_name_pattern' => 'queue_advanced_shared',
       ],
+      'threshold' => [
+        Job::STATE_SUCCESS => [
+          'type' => 'amount',
+          'amount' => 100,
+          'time' => 3,
+        ],
+        Job::STATE_FAILURE => [
+          'type' => 'amount',
+          'amount' => 100,
+          'time' => 3,
+        ],
+      ],
     ];
 
     return $values;
   }
 
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    $parents = $form['#parents'];
+    $namePrefix = $parents[0];
+    if (count($parents) > 1) {
+      $namePrefix .= '[' . implode('][', array_slice($parents, 1)) . ']';
+    }
+
     $config = $this->getConfiguration();
 
     $form = parent::buildConfigurationForm($form, $form_state);
     $form['connection_name'] = [
-      '#type' => 'textfield',
+      '#type' => 'select',
       '#required' => TRUE,
       '#title' => $this->t('Connection name'),
+      '#description' => $this->t('Name of the ArangoDB connection defined in <code>arangodb.connection_options</code> service parameter or in <code>$settings[\'arangodb.connection_options\']</code> array in <code>settings.php</code>.'),
+      '#empty_option' => $this->t('- Select -'),
+      '#options' => $this->connectionFactory->getConnectionNames(),
       '#default_value' => $config['connection_name'],
     ];
 
@@ -185,6 +204,87 @@ class Arangodb extends BackendBase implements
       ],
     ];
 
+    $form['threshold'] = [
+      '#type' => 'details',
+      '#tree' => TRUE,
+      '#title' => $this->t('Threshold'),
+      '#open' => TRUE,
+      Job::STATE_SUCCESS => [
+        '#type' => 'details',
+        '#tree' => TRUE,
+        '#title' => $this->t('Job state: success'),
+        '#open' => TRUE,
+
+        'type' => [
+          '#type' => 'select',
+          '#title' => $this->t('Type of the cleanup for the finished jobs'),
+          '#default_value' => $config['threshold'][Job::STATE_SUCCESS]['type'],
+          '#options' => $this->getCleanupTypeOptions(),
+        ],
+        'amount' => [
+          '#type' => 'number',
+          '#title' => $this->t('Number of successfully finished jobs to keep'),
+          '#min' => 0,
+          '#step' => 10,
+          '#default_value' => $config['threshold'][Job::STATE_SUCCESS]['amount'],
+          '#states' => [
+            'visible' => [
+              ":input[name='{$namePrefix}[threshold][success][type]']" => ['value' => 'amount'],
+            ],
+          ],
+        ],
+        'time' => [
+          '#type' => 'number',
+          '#title' => $this->t('Number of days to keep the jobs for'),
+          '#min' => 0,
+          '#step' => 1,
+          '#default_value' => $config['threshold'][Job::STATE_SUCCESS]['time'],
+          '#states' => [
+            'visible' => [
+              ":input[name='{$namePrefix}[threshold][success][type]']" => ['value' => 'time'],
+            ],
+          ],
+        ],
+      ],
+      Job::STATE_FAILURE => [
+        '#type' => 'details',
+        '#tree' => TRUE,
+        '#title' => $this->t('Job state: failure'),
+        '#open' => TRUE,
+
+        'type' => [
+          '#type' => 'select',
+          '#title' => $this->t('Type of the cleanup for the failed jobs'),
+          '#default_value' => $config['threshold'][Job::STATE_FAILURE]['type'],
+          '#options' => $this->getCleanupTypeOptions(),
+        ],
+        'amount' => [
+          '#type' => 'number',
+          '#title' => $this->t('Number of failed jobs to keep'),
+          '#min' => 0,
+          '#step' => 10,
+          '#default_value' => $config['threshold'][Job::STATE_FAILURE]['amount'],
+          '#states' => [
+            'visible' => [
+              ":input[name='{$namePrefix}[threshold][failure][type]']" => ['value' => 'amount'],
+            ],
+          ],
+        ],
+        'time' => [
+          '#type' => 'number',
+          '#title' => $this->t('Number of days to keep the jobs for'),
+          '#min' => 0,
+          '#step' => 1,
+          '#default_value' => $config['threshold'][Job::STATE_FAILURE]['time'],
+          '#states' => [
+            'visible' => [
+              ":input[name='{$namePrefix}[threshold][failure][type]']" => ['value' => 'time'],
+            ],
+          ],
+        ],
+      ],
+    ];
+
     return $form;
   }
 
@@ -199,18 +299,40 @@ class Arangodb extends BackendBase implements
 
     $values = $form_state->getValue($form['#parents']);
     try {
-      $connection = $this->connectionFactory->get($values['connection_name']);
+      $this->connectionFactory->get($values['connection_name']);
     } catch (\Exception $e) {
       $form_state->setErrorByName(
          "{$element_name_prefix}connection_name",
         $this->t(
-          'Connection name does not exists: @connection_name',
+          'Connection with name %connection_name could not be established. Error message: @error_message',
           [
-            '@connection_name' => $values['connection_name'],
+            '%connection_name' => $values['connection_name'],
+            '@error_message' => $e->getMessage(),
           ],
         ),
       );
     }
+  }
+
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
+    parent::submitConfigurationForm($form, $form_state);
+
+    if ($form_state->getErrors()) {
+      return;
+    }
+
+    $values = $form_state->getValue($form['#parents']);
+    $this->configuration['connection_name'] = $values['connection_name'];
+    $this->configuration['storage_options'] = $values['storage_options'];
+    $this->configuration['threshold'] = $values['threshold'];
+  }
+
+  protected function getCleanupTypeOptions(): array {
+    return [
+      'none' => $this->t('Keep all jobs'),
+      'amount' => $this->t('Keep certain amount of jobs'),
+      'time' => $this->t('Keep jobs for certain amount of days'),
+    ];
   }
 
   /**
@@ -222,6 +344,100 @@ class Arangodb extends BackendBase implements
     $this
       ->initConnection()
       ->initCollection($this->getCollectionName());
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @throws \ArangoDBClient\Exception
+   */
+  public function cleanupQueue() {
+    $collectionName = $this->getCollectionName();
+    $this
+      ->initConnection()
+      ->initCollection($collectionName)
+      ->releaseStuckJobs()
+      ->cleanupFinishedJobs();
+  }
+
+  /**
+   * @throws ArangoDBException
+   */
+  protected function cleanupFinishedJobs(): static {
+    $config = $this->getConfiguration();
+    $this
+      ->cleanupFinishedJobsByState(Job::STATE_SUCCESS, $config['threshold'][Job::STATE_SUCCESS])
+      ->cleanupFinishedJobsByState(Job::STATE_FAILURE, $config['threshold'][Job::STATE_FAILURE]);
+
+    return $this;
+  }
+
+  /**
+   * @throws \ArangoDBClient\Exception
+   */
+  protected function cleanupFinishedJobsByState(string $state, array $threshold): static {
+    $query = '';
+    $bindVars = [];
+    switch ($threshold['type']) {
+      case 'amount':
+        $amountToKeep = $threshold['amount'];
+        $numOfJobs = $this->countJobs();
+        if ($numOfJobs[$state] === 0
+          || ($amountToKeep && $numOfJobs[$state] <= $amountToKeep)
+        ) {
+          // There are no any jobs to delete
+          // or the available jobs are less than the limit.
+          break;
+        }
+
+        $query = <<< AQL
+        FOR doc IN @@collection
+          FILTER
+            doc.queueId == @queueId
+            AND
+            doc.state == @state
+          SORT
+            doc.processed
+          LIMIT @limitCount
+          REMOVE doc IN @@collection
+        AQL;
+
+        $bindVars = [
+          '@collection' => $this->getCollectionName(),
+          'queueId' => $this->queueId,
+          'state' => $state,
+          'limitCount' => $numOfJobs[$state] - $amountToKeep,
+        ];
+        break;
+
+      case 'time':
+        $query = <<< AQL
+        FOR doc IN @@collection
+          FILTER
+            doc.queueId == @queueId
+            AND
+            doc.state == @state
+            AND
+            doc.processed < @processed
+          REMOVE doc IN @@collection
+        AQL;
+
+        $bindVars = [
+          '@collection' => $this->getCollectionName(),
+          'queueId' => $this->queueId,
+          'state' => $state,
+          'processed' => $this->time->getCurrentTime() - ($threshold['time'] * 86400),
+        ];
+        break;
+    }
+
+    if (!$query) {
+      return $this;
+    }
+
+    $this->executeStatement($query, $bindVars);
+
+    return $this;
   }
 
   /**
@@ -258,6 +474,11 @@ class Arangodb extends BackendBase implements
    * @throws \ArangoDBClient\Exception
    */
   public function countJobs() {
+    $collectionName = $this->getCollectionName();
+    $this
+      ->initConnection()
+      ->initCollection($collectionName);
+
     $values = [
       Job::STATE_QUEUED => 0,
       Job::STATE_PROCESSING => 0,
@@ -266,21 +487,21 @@ class Arangodb extends BackendBase implements
     ];
 
     $query = <<< AQL
-      FOR doc IN @@collection
-        FILTER
-          doc.queueId == @queueId
-        COLLECT
-          state = doc.state WITH COUNT INTO length
-        RETURN {
-          "state": state,
-          "count": length
-        }
+    FOR doc IN @@collection
+      FILTER
+        doc.queueId == @queueId
+      COLLECT
+        state = doc.state WITH COUNT INTO length
+      RETURN {
+        "state": state,
+        "count": length
+      }
     AQL;
 
     $result = $this->executeStatement(
       $query,
       [
-        '@collection' => $this->getCollectionName(),
+        '@collection' => $collectionName,
         'queueId' => $this->queueId,
       ],
     );
@@ -522,6 +743,50 @@ class Arangodb extends BackendBase implements
     catch (ArangoDBException $e) {
       // @todo Error log.
     }
+  }
+
+  /**
+   * @throws \ArangoDBClient\Exception
+   */
+  public function releaseStuckJobs(): static {
+    $this
+      ->initConnection()
+      ->initCollection($this->getCollectionName());
+
+    $query = <<< AQL
+    FOR doc IN @@collection
+      FILTER
+        doc.queueId == @queueId
+        AND
+        doc.expires > 0
+        AND
+        doc.expires <= @now
+        AND
+        doc.state == @stateCurrent
+      UPDATE doc WITH {
+        state: @stateNew,
+        expires: 0
+      }
+      IN @@collection
+    AQL;
+
+    try {
+      $this->executeStatement(
+        $query,
+        [
+          '@collection' => $this->getCollectionName(),
+          '@queueId' => $this->queueId,
+          'now' => $this->time->getCurrentTime(),
+          'stateCurrent' => Job::STATE_PROCESSING,
+          'stateNew' => Job::STATE_QUEUED,
+        ],
+      );
+    }
+    catch (ArangoDBException) {
+      // @todo Error log.
+    }
+
+    return $this;
   }
 
   /**

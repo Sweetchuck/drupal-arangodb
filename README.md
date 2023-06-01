@@ -10,20 +10,20 @@ This module uses ArangoDB as data storage for different services.
 
 ## Features
 
-| Feature                      | status             |
-|------------------------------|--------------------|
-| [Cache backend]              | &#x2705; POC ready |
-| [Queue]                      | &#x2705; POC ready |
-| [Advanced Queue backend]     | &#x2705; POC ready |
-| [Log]                        | not yet            |
-| [Session]                    | not yet            |
-| [Lock]                       | not yet            |
-| [Flood]                      | not yet            |
-| [Webform submission storage] | not yet            |
-| [SearchAPI server]           | not yet            |
-| [Config entity storage]      | not yet            |
-| [Content entity storage]     | not yet            |
-| [Full database driver]       | not yet            |
+| Feature                      | status              |
+|------------------------------|---------------------|
+| [Cache backend]              | &#x2705; POC ready  |
+| [Queue]                      | &#x2705; POC ready  |
+| [Advanced Queue backend]     | &#x2705; POC ready  |
+| [Log]                        | &#x2705; POC ready  |
+| [Session]                    | not yet             |
+| [Lock]                       | not yet             |
+| [Flood]                      | not yet             |
+| [Webform submission storage] | not yet             |
+| [SearchAPI server]           | not yet             |
+| [Config entity storage]      | not yet             |
+| [Content entity storage]     | not yet             |
+| [Full database driver]       | not yet             |
 
 
 ## How to setup ArangoDB connections
@@ -40,14 +40,15 @@ This parameter is used by `arangodb.connection_factory.*` services.
 
 ```yaml
 parameters:
-  arangodb.connection.options.default:
-    endpoint: 'tcp://127.0.0.1:8529'
-    Connection: 'Close'
-    timeout: 3
-    Reconnect: true
-    policy: 'last'
-    createCollection: false
-    database: 'cache'
+  arangodb.connection_options:
+    default:
+      endpoint: 'tcp://127.0.0.1:8529'
+      Connection: 'Close'
+      timeout: 3
+      Reconnect: true
+      policy: 'last'
+      createCollection: false
+      database: 'cache'
 ```
 
 Connection credentials (username/password) also can be defined as service parameters,
@@ -61,12 +62,14 @@ defined in `services.*.yml#/parameters/arangodb.connection.options.*`.
 use ArangoDBClient\ConnectionOptions as ArangoDbConnectionOptions;
 use ArangoDBClient\DefaultValues as ArangoDbDefaultValues;
 
-$settings['arangodb.connection.options.default'] = [
-  ArangoDbConnectionOptions::OPTION_ENDPOINT => getenv('APP_ARANGODB_CONNECTION_DEFAULT_ENDPOINT') ?: 'tcp://127.0.0.1:8529',
-  ArangoDbConnectionOptions::OPTION_AUTH_TYPE => ArangoDbDefaultValues::DEFAULT_AUTH_TYPE,
-  ArangoDbConnectionOptions::OPTION_AUTH_USER => getenv('APP_ARANGODB_CONNECTION_DEFAULT_USER') ?: getenv('USER'),
-  ArangoDbConnectionOptions::OPTION_AUTH_PASSWD => getenv('APP_ARANGODB_CONNECTION_DEFAULT_PASSWD') ?: 'admin',
-  ArangoDbConnectionOptions::OPTION_DATABASE => getenv('APP_ARANGODB_CONNECTION_DEFAULT_DATABASE') ?: $databases['default']['default']['database'],
+$settings['arangodb.connection_options'] = [
+  'default' => [
+    ArangoDbConnectionOptions::OPTION_ENDPOINT => getenv('APP_ARANGODB_CONNECTION_DEFAULT_ENDPOINT') ?: 'tcp://127.0.0.1:8529',
+    ArangoDbConnectionOptions::OPTION_AUTH_TYPE => ArangoDbDefaultValues::DEFAULT_AUTH_TYPE,
+    ArangoDbConnectionOptions::OPTION_AUTH_USER => getenv('APP_ARANGODB_CONNECTION_DEFAULT_USER') ?: getenv('USER'),
+    ArangoDbConnectionOptions::OPTION_AUTH_PASSWD => getenv('APP_ARANGODB_CONNECTION_DEFAULT_PASSWD') ?: 'admin',
+    ArangoDbConnectionOptions::OPTION_DATABASE => getenv('APP_ARANGODB_CONNECTION_DEFAULT_DATABASE') ?: $databases['default']['default']['database'],
+  ],
 ];
 ```
 
@@ -86,7 +89,7 @@ $settings['cache']['bins']['config'] = 'cache.backend.arangodb_no_serializer';
 ```
 
 
-## Feature - Queue
+## Feature - Queue core
 
 **Remaining tasks:**
 
@@ -100,6 +103,23 @@ $settings['queue_default'] = 'arangodb.queue_core.storage.shared';
 $settings['queue_reliable_service_foo'] = 'arangodb.queue_core.storage.dedicated';
 //$settings['queue_service_bar'] = 'arangodb.queue_core.storage.dedicated';
 ```
+
+
+## Feature - Queue advanced
+
+The integration is done by implementing an `AdvancedQueue/Backend` plugin.
+
+
+## Feature - Logger
+
+Logger in the `arangodb` module isn't activated by default.
+In order to activate the logger, the following line has to be added to the `settings.local.php`.
+
+**settings.local.php**
+```php
+$settings['container_yamls']['arangodb.logger'] = 'modules/contrib/arangodb/arangodb.services.logger.yml';
+```
+
 
 
 ## Feature - Session
@@ -160,7 +180,9 @@ $settings['queue_reliable_service_foo'] = 'arangodb.queue_core.storage.dedicated
 
 [Flood]: #feature---flood
 
-[Queue]: #feature---queue
+[Queue core]: #feature---queue-core
+
+[Advanced Queue backend]: #feature---queue-advanced
 
 [Log]: #feature---log
 
