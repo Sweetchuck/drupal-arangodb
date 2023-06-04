@@ -1,0 +1,44 @@
+parameters:
+  arangodb.lock.backend.options.default:
+    collectionNamePattern: 'lock'
+
+  arangodb.lock.schema_manager.options.default:
+    collectionOptions:
+      keyOptions:
+        type: 'padded'
+
+services:
+  arangodb.lock.document_converter.default:
+    class: 'Drupal\arangodb\Lock\DocumentConverter'
+
+  arangodb.lock.schema_manager.default:
+    class: 'Drupal\arangodb\Lock\SchemaManager'
+    calls:
+      -
+        - 'setOptions'
+        -
+          - '%arangodb.lock.schema_manager.options.default%'
+
+  lock:
+    class: 'Drupal\arangodb\Lock\Backend'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.lock.schema_manager.default'
+      - '@arangodb.lock.document_converter.default'
+      - '%arangodb.lock.backend.options.default%'
+    tags:
+      -
+        name: 'backend_overridable'
+
+  lock.persistent:
+    class: 'Drupal\arangodb\Lock\BackendPersistent'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.lock.schema_manager.default'
+      - '@arangodb.lock.document_converter.default'
+      - '%arangodb.lock.backend.options.default%'
+    tags:
+      -
+        name: 'backend_overridable'

@@ -4,107 +4,323 @@ declare(strict_types = 1);
 
 namespace Drupal\arangodb\Lock;
 
+use ArangoDBClient\Document;
+use ArangoDBClient\Statement;
+use Drupal\arangodb\ConnectionFactory;
 use Drupal\arangodb\ConnectionTrait;
-use Drupal\Core\Database\IntegrityConstraintViolationException;
 use Drupal\Core\Lock\LockBackendAbstract;
+use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
 
 class Backend extends LockBackendAbstract {
 
   use ConnectionTrait;
 
+  /**
+   * Existing locks for this page.
+   *
+   * @var array<string, Document>
+   */
+  protected $locks = [];
+
+  protected int|float $minTimeout = 0.001;
+
+  protected SchemaManagerInterface $schemaManager;
+
+  protected array $options;
+
+  protected DocumentConverterInterface $documentConverter;
+
+  public function __construct(
+    ConnectionFactory $connectionFactory,
+    string $connectionName,
+    SchemaManagerInterface $schemaManager,
+    DocumentConverterInterface $documentConverter,
+    array $options,
+  ) {
+    $this->connectionFactory = $connectionFactory;
+    $this->connectionName = $connectionName;
+    $this->schemaManager = $schemaManager;
+    $this->documentConverter = $documentConverter;
+    $this->options = $options;
+
+    $this->collectionNamePattern = $options['collectionNamePattern'] ?? 'lock';
+    $this->minTimeout = max($options['minTimeout'] ?? 0.001, 0.001);
+  }
+
   protected function getCollectionName(): string {
-    return 'lock';
+    return $this->collectionNamePattern;
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @throws \ArangoDBClient\Exception
    */
   public function acquire($name, $timeout = 30.0) {
     $name = $this->normalizeName($name);
 
-    // Insure that the timeout is at least 1 ms.
-    $timeout = max($timeout, 0.001);
-    $expire = microtime(TRUE) + $timeout;
+    assert(
+      $timeout >= $this->minTimeout,
+      "\$timeout($timeout) has to be >= than {$this->minTimeout}",
+    );
+
+    $expire = $this->getNow() + max($timeout, $this->minTimeout);
+
+    $this
+      ->initConnection()
+      ->initCollection($this->getCollectionName());
+
     if (isset($this->locks[$name])) {
-      // Try to extend the expiration of a lock we already acquired.
-      $success = (bool) $this->database->update('semaphore')
-        ->fields(['expire' => $expire])
-        ->condition('name', $name)
-        ->condition('value', $this->getLockId())
-        ->execute();
+      $success = $this->acquireUpdate($name, $expire);
       if (!$success) {
-        // The lock was broken.
         unset($this->locks[$name]);
       }
+
       return $success;
     }
-    else {
-      // Optimistically try to acquire the lock, then retry once if it fails.
-      // The first time through the loop cannot be a retry.
-      $retry = FALSE;
-      // We always want to do this code at least once.
-      do {
-        try {
-          $this->database->insert('semaphore')
-            ->fields([
-              'name' => $name,
-              'value' => $this->getLockId(),
-              'expire' => $expire,
-            ])
-            ->execute();
-          // We track all acquired locks in the global variable.
-          $this->locks[$name] = TRUE;
-          // We never need to try again.
-          $retry = FALSE;
-        }
-        catch (IntegrityConstraintViolationException $e) {
-          // Suppress the error. If this is our first pass through the loop,
-          // then $retry is FALSE. In this case, the insert failed because some
-          // other request acquired the lock but did not release it. We decide
-          // whether to retry by checking lockMayBeAvailable(). This will clear
-          // the offending row from the database table in case it has expired.
-          $retry = $retry ? FALSE : $this->lockMayBeAvailable($name);
-        }
-        catch (\Exception $e) {
-          // Create the semaphore table if it does not exist and retry.
-          if ($this->ensureTableExists()) {
-            // Retry only once.
-            $retry = !$retry;
-          }
-          else {
-            throw $e;
-          }
-        }
-        // We only retry in case the first attempt failed, but we then broke
-        // an expired lock.
-      } while ($retry);
+
+    try {
+      $this->locks[$name] = $this->acquireInsert($name, $expire);
     }
+    catch (\Exception $e) {
+      if ($this->lockMayBeAvailable($name)) {
+        $this->locks[$name] = $this->acquireInsert($name, $expire);
+      }
+    }
+
     return isset($this->locks[$name]);
   }
 
   /**
+   * @throws \ArangoDBClient\ClientException
+   * @throws \ArangoDBClient\Exception
+   */
+  protected function acquireInsert(string $name, int|float $expire): Document {
+    $class = $this->documentConverter->getDocumentClass();
+    /** @var \ArangoDBClient\Document $document */
+    $document = new $class();
+    $document->set('lockId', $this->getLockId());
+    $document->set('name', $name);
+    $document->set('expire', $expire);
+
+    $this
+      ->documentHandler
+      ->insert($this->getCollectionName(), $document);
+
+    return $document;
+  }
+
+  /**
+   * @throws \ArangoDBClient\ClientException
+   */
+  protected function acquireUpdate(string $name, int|float $expire): bool {
+    // Try to extend the expiration of a lock we already acquired.
+    $this->locks[$name]->set('expire', $expire);
+    try {
+      return $this->documentHandler->update($this->locks[$name]);
+    } catch (\Exception) {
+      return FALSE;
+    }
+  }
+
+  /**
    * {@inheritdoc}
+   *
+   * @throws \ArangoDBClient\Exception
    */
   public function lockMayBeAvailable($name) {
-    // @todo Implement lockMayBeAvailable() method.
+    $this
+      ->initConnection()
+      ->initCollection($this->getCollectionName());
+
+    $name = $this->normalizeName($name);
+    $document = $this->load($name);
+    if (!$document) {
+      return TRUE;
+    }
+
+    return $document->get('expire') < $this->getNow()
+      && $this->cleanup($document);
+  }
+
+  /**
+   * @throws \ArangoDBClient\Exception
+   */
+  protected function cleanup(Document $document): bool {
+    // We check two conditions to prevent a race condition where another
+    // request acquired the lock and set a new expire time. We add a small
+    // number to $expire to avoid errors with float to string conversion.
+    $query = <<< AQL
+    FOR doc IN @@collection
+      FILTER
+        doc.name == @name
+        AND
+        doc.expire <= @expire
+      REMOVE doc IN @@collection
+    AQL;
+
+    $statement = new Statement(
+      $this->getConnection(),
+      [
+        'query' => $query,
+        'bindVars' => [
+          '@collection' => $this->getCollectionName(),
+          'name' => $document->get('name'),
+          'expire' => $document->get('expire') + 0.0001,
+        ],
+      ],
+    );
+    $result = $statement->execute();
+
+    return $result->getCount() > 0;
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @throws \ArangoDBClient\Exception
    */
   public function release($name) {
-    // @todo Implement release() method.
+    $collectionName = $this->getCollectionName();
+    $this
+      ->initConnection()
+      ->initCollection($collectionName);
+
+    $name = $this->normalizeName($name);
+    isset($this->locks[$name]) ?
+      $this->releaseByDocument($name)
+      : $this->releaseByName($name);
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @throws \ArangoDBClient\Exception
    */
   public function releaseAll($lockId = NULL) {
-    // @todo Implement releaseAll() method.
+    $collectionName = $this->getCollectionName();
+    $this
+      ->initConnection()
+      ->initCollection($collectionName);
+
+    $currentLockId = $this->getLockId();
+    if (!$lockId) {
+      $lockId = $currentLockId;
+    }
+
+    if ($lockId === $currentLockId) {
+      $this->locks = [];
+    }
+
+    $this->releaseByLockId($lockId);
+  }
+
+  /**
+   * @throws \ArangoDBClient\Exception
+   */
+  protected function load(string $name): ?Document {
+    $query = <<< AQL
+      FOR doc IN @@collection
+        FILTER
+          doc.name == @name
+        RETURN doc
+    AQL;
+
+    $statement = new Statement(
+      $this->getConnection(),
+      [
+        'query' => $query,
+        'bindVars' => [
+          '@collection' => $this->getCollectionName(),
+          'name' => $name,
+        ],
+      ],
+    );
+    $statement->setDocumentClass($this->documentConverter->getDocumentClass());
+    $result = $statement->execute();
+
+    $result->rewind();
+    if (!$result->valid()) {
+      return NULL;
+    }
+
+    /** @var \ArangoDBClient\Document $document */
+    $document = $result->current();
+
+    return $document;
+  }
+
+  /**
+   * @throws \ArangoDBClient\Exception
+   */
+  protected function releaseByDocument(string $name) {
+    $this
+      ->documentHandler
+      ->remove($this->locks[$name]);
+
+    unset($this->locks[$name]);
+  }
+
+  /**
+   * @throws \ArangoDBClient\Exception
+   */
+  protected function releaseByName(string $name) {
+    $query = <<< AQL
+    FOR doc in @@collection
+      FILTER
+        doc.lockId == @lockId
+        AND
+        doc.name == @name
+      REMOVE doc IN @@collection
+    AQL;
+
+    $statement = new Statement(
+      $this->getConnection(),
+      [
+        'query' => $query,
+        'bindVars' => [
+          '@collection' => $this->getCollectionName(),
+          'lockId' => $this->getLockId(),
+          'name' => $name,
+        ],
+      ],
+    );
+
+    $statement->execute();
+  }
+
+  /**
+   * @throws \ArangoDBClient\Exception
+   */
+  protected function releaseByLockId(string $lockId) {
+    $query = <<< AQL
+    FOR doc in @@collection
+      FILTER
+        doc.lockId == @lockId
+      REMOVE doc IN @@collection
+    AQL;
+
+    $statement = new Statement(
+      $this->getConnection(),
+      [
+        'query' => $query,
+        'bindVars' => [
+          '@collection' => $this->getCollectionName(),
+          'lockId' => $lockId,
+        ],
+      ],
+    );
+
+    $statement->execute();
   }
 
   protected function normalizeName(string $name): string {
     return $name;
+  }
+
+  protected function getNow(): float {
+    // @todo Why not @datetime.time::getCurrentMicroTime()?
+    return microtime(TRUE);
   }
 
 }

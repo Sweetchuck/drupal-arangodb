@@ -22,3 +22,14 @@ services:
     tags:
       -
         name: 'drush.command'
+
+  arangodb.lock.commands:
+    class: 'Drupal\arangodb\Commands\DevelHelperLockCommands'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@lock'
+      - '@lock.persistent'
+    tags:
+      -
+        name: 'drush.command'
