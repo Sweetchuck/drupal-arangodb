@@ -1,0 +1,36 @@
+parameters:
+  arangodb.flood.backend.options.default:
+    collectionNamePattern: 'flood'
+
+  arangodb.flood.schema_manager.options.default:
+    collectionOptions:
+      keyOptions:
+        type: 'padded'
+
+services:
+  arangodb.flood.document_converter.default:
+    class: 'Drupal\arangodb\Flood\DocumentConverter'
+    arguments:
+      - '@datetime.time'
+
+  arangodb.flood.schema_manager.default:
+    class: 'Drupal\arangodb\Flood\SchemaManager'
+    calls:
+      -
+        - 'setOptions'
+        -
+          - '%arangodb.flood.schema_manager.options.default%'
+
+  flood:
+    class: 'Drupal\arangodb\Flood\Backend'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.flood.schema_manager.default'
+      - '@arangodb.flood.document_converter.default'
+      - '@request_stack'
+      - '@datetime.time'
+      - '%arangodb.flood.backend.options.default%'
+    tags:
+      -
+        name: 'backend_overridable'

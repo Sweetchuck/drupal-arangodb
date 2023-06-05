@@ -12,7 +12,7 @@ This module uses ArangoDB as data storage for different services.
 | [Queue advanced]             | &#x2705; POC ready |
 | [Logger]                     | &#x2705; POC ready |
 | [Lock]                       | &#x2705; POC ready |
-| [Flood]                      | not yet            |
+| [Flood]                      | &#x2705; POC ready |
 | [Session]                    | not yet            |
 | [Webform submission storage] | not yet            |
 | [SearchAPI server]           | not yet            |
@@ -129,7 +129,14 @@ $settings['container_yamls']['arangodb.lock'] = 'modules/contrib/arangodb/arango
 
 ## Feature - Flood
 
-@todo
+To store flood events with `arangodb` module isn't activated by default.
+In order to use ArangoDB as flood event storage, the following line has to be added to the `settings.local.php`.
+
+**settings.local.php**
+
+```php
+$settings['container_yamls']['arangodb.flood'] = 'modules/contrib/arangodb/arangodb.services.flood.yml';
+```
 
 
 ## Feature - Session

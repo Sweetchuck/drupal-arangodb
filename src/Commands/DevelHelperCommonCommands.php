@@ -5,6 +5,11 @@ declare(strict_types = 1);
 namespace Drupal\arangodb\Commands;
 
 use ArangoDBClient\CollectionHandler;
+use ArangoDBClient\Document;
+use ArangoDBClient\DocumentHandler;
+use ArangoDBClient\Exception;
+use ArangoDBClient\ServerException;
+use ArangoDBClient\Statement;
 use Consolidation\AnnotatedCommand\CommandResult;
 use Drupal\arangodb\ConnectionFactoryInterface;
 use Drush\Commands\DrushCommands;
@@ -113,6 +118,47 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
   }
 
   /**
+   * Create a new collection by insert.
+   *
+   * @command arangodb:collection:create-by-insert
+   *
+   * @option string $connection-name
+   *   Name of the ArangoDB connection.
+   *
+   * @throws \Exception
+   */
+  public function cmdArangodbCollectionCreateByInsertExecute(
+    array $options = [
+      'connection-name' => 'default',
+    ]
+  ): CommandResult {
+    $connection = $this->connectionFactory->get($options['connection-name']);
+    $documentHandler = new DocumentHandler($connection);
+
+    $document = new Document();
+    $document->set('key01', 'value');
+
+    try {
+      $documentHandler->insert(
+        'test_foo',
+        $document,
+        [
+          'createCollection' => TRUE,
+        ],
+      );
+    } catch (ServerException $e) {
+      var_dump($e->getCode());
+      var_dump($e->getServerCode());
+
+      return CommandResult::exitCode(1);
+    }
+
+    var_dump($document);
+
+    return CommandResult::exitCode(0);
+  }
+
+  /**
    * @throws \ArangoDBClient\Exception
    * @throws \ArangoDBClient\ClientException
    */
@@ -126,7 +172,7 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
 
   protected function getArrayFilterByKeyPrefix(string $keyPrefix): callable {
     return function (string $key) use ($keyPrefix): bool {
-      return str_starts_with($key, $keyPrefix);
+      return !$keyPrefix || str_starts_with($key, $keyPrefix);
     };
   }
 

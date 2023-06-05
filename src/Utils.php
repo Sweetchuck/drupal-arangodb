@@ -9,6 +9,8 @@ use Drupal\arangodb\Cache\Backend as ArangoDbCacheBackend;
 
 class Utils {
 
+  const SERVER_CODE_COLLECTION_NOT_EXISTS = 1203;
+
   /**
    * @see \Drupal\Core\Cache\Cache::getBins()
    */

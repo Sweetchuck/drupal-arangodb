@@ -87,8 +87,8 @@ trait ConnectionTrait {
   }
 
   public function setConnection(?Connection $connection): static {
-    $this->connection = $connection;
     $this->resetConnection();
+    $this->connection = $connection;
 
     return $this;
   }
