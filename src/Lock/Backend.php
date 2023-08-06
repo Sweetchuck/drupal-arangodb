@@ -37,18 +37,18 @@ class Backend extends LockBackendAbstract {
     DocumentConverterInterface $documentConverter,
     array $options,
   ) {
-    $this->connectionFactory = $connectionFactory;
-    $this->connectionName = $connectionName;
+    $this->dbConnectionFactory = $connectionFactory;
+    $this->dbConnectionName = $connectionName;
     $this->schemaManager = $schemaManager;
     $this->documentConverter = $documentConverter;
     $this->options = $options;
 
-    $this->collectionNamePattern = $options['collectionNamePattern'] ?? 'lock';
+    $this->dbCollectionNamePattern = $options['collectionNamePattern'] ?? 'lock';
     $this->minTimeout = max($options['minTimeout'] ?? 0.001, 0.001);
   }
 
-  protected function getCollectionName(): string {
-    return $this->collectionNamePattern;
+  protected function getDbCollectionName(): string {
+    return $this->dbCollectionNamePattern;
   }
 
   /**
@@ -67,8 +67,8 @@ class Backend extends LockBackendAbstract {
     $expire = $this->getNow() + max($timeout, $this->minTimeout);
 
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     if (isset($this->locks[$name])) {
       $success = $this->acquireUpdate($name, $expire);
@@ -104,8 +104,8 @@ class Backend extends LockBackendAbstract {
     $document->set('expire', $expire);
 
     $this
-      ->documentHandler
-      ->insert($this->getCollectionName(), $document);
+      ->dbDocumentHandler
+      ->insert($this->getDbCollectionName(), $document);
 
     return $document;
   }
@@ -117,7 +117,7 @@ class Backend extends LockBackendAbstract {
     // Try to extend the expiration of a lock we already acquired.
     $this->locks[$name]->set('expire', $expire);
     try {
-      return $this->documentHandler->update($this->locks[$name]);
+      return $this->dbDocumentHandler->update($this->locks[$name]);
     } catch (\Exception) {
       return FALSE;
     }
@@ -130,8 +130,8 @@ class Backend extends LockBackendAbstract {
    */
   public function lockMayBeAvailable($name) {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     $name = $this->normalizeName($name);
     $document = $this->load($name);
@@ -160,11 +160,11 @@ class Backend extends LockBackendAbstract {
     AQL;
 
     $statement = new Statement(
-      $this->getConnection(),
+      $this->getDbConnection(),
       [
         'query' => $query,
         'bindVars' => [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'name' => $document->get('name'),
           'expire' => $document->get('expire') + 0.0001,
         ],
@@ -181,10 +181,10 @@ class Backend extends LockBackendAbstract {
    * @throws \ArangoDBClient\Exception
    */
   public function release($name) {
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     $name = $this->normalizeName($name);
     isset($this->locks[$name]) ?
@@ -198,10 +198,10 @@ class Backend extends LockBackendAbstract {
    * @throws \ArangoDBClient\Exception
    */
   public function releaseAll($lockId = NULL) {
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     $currentLockId = $this->getLockId();
     if (!$lockId) {
@@ -227,11 +227,11 @@ class Backend extends LockBackendAbstract {
     AQL;
 
     $statement = new Statement(
-      $this->getConnection(),
+      $this->getDbConnection(),
       [
         'query' => $query,
         'bindVars' => [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'name' => $name,
         ],
       ],
@@ -255,7 +255,7 @@ class Backend extends LockBackendAbstract {
    */
   protected function releaseByDocument(string $name) {
     $this
-      ->documentHandler
+      ->dbDocumentHandler
       ->remove($this->locks[$name]);
 
     unset($this->locks[$name]);
@@ -275,11 +275,11 @@ class Backend extends LockBackendAbstract {
     AQL;
 
     $statement = new Statement(
-      $this->getConnection(),
+      $this->getDbConnection(),
       [
         'query' => $query,
         'bindVars' => [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'lockId' => $this->getLockId(),
           'name' => $name,
         ],
@@ -301,11 +301,11 @@ class Backend extends LockBackendAbstract {
     AQL;
 
     $statement = new Statement(
-      $this->getConnection(),
+      $this->getDbConnection(),
       [
         'query' => $query,
         'bindVars' => [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'lockId' => $lockId,
         ],
       ],

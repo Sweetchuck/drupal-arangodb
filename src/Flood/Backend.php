@@ -38,10 +38,10 @@ class Backend implements FloodInterface {
     TimeInterface $time,
     array $options,
   ) {
-    $this->connectionFactory = $connectionFactory;
-    $this->connectionName = $connectionName;
+    $this->dbConnectionFactory = $connectionFactory;
+    $this->dbConnectionName = $connectionName;
     $this->options = $options;
-    $this->setCollectionNamePattern($options['collectionNamePattern'] ?? 'flood');
+    $this->setDbCollectionNamePattern($options['collectionNamePattern'] ?? 'flood');
     $this->schemaManager = $schemaManager;
     $this->documentConverter = $documentConverter;
     $this->requestStack = $requestStack;
@@ -54,7 +54,7 @@ class Backend implements FloodInterface {
    * @throws \ArangoDBClient\Exception
    */
   public function register($name, $window = 3600, $identifier = NULL) {
-    $this->initConnection();
+    $this->initDbConnection();
 
     if (!isset($identifier)) {
       $identifier = $this->requestStack->getCurrentRequest()->getClientIp();
@@ -65,7 +65,7 @@ class Backend implements FloodInterface {
     }
     catch (ServerException $e) {
       if ($e->getServerCode() === Utils::SERVER_CODE_COLLECTION_NOT_EXISTS) {
-        $this->initCollection($this->getCollectionName());
+        $this->initDbCollection($this->getDbCollectionName());
         $this->doInsert($name, $window, $identifier);
 
         return;
@@ -90,8 +90,8 @@ class Backend implements FloodInterface {
    */
   protected function doInsert(string $name, int $window, string $identifier) {
     $document = $this->documentConverter->eventToDocument($name, $window, $identifier);
-    $this->documentHandler->insert(
-      $this->getCollectionName(),
+    $this->dbDocumentHandler->insert(
+      $this->getDbCollectionName(),
       $document,
       [
         'createCollection' => FALSE,
@@ -105,7 +105,7 @@ class Backend implements FloodInterface {
    * @throws \ArangoDBClient\Exception
    */
   public function clear($name, $identifier = NULL) {
-    $this->initConnection();
+    $this->initDbConnection();
 
     if ($identifier === NULL) {
       $identifier = $this->requestStack->getCurrentRequest()->getClientIp();
@@ -121,11 +121,11 @@ class Backend implements FloodInterface {
     AQL;
 
     $statement = new Statement(
-      $this->getConnection(),
+      $this->getDbConnection(),
       [
         Statement::ENTRY_QUERY => $query,
         Statement::ENTRY_BINDVARS => [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'name' => $name,
           'identifier' => $identifier,
         ],
@@ -147,7 +147,7 @@ class Backend implements FloodInterface {
    * @throws \ArangoDBClient\Exception
    */
   public function isAllowed($name, $threshold, $window = 3600, $identifier = NULL) {
-    $this->initConnection();
+    $this->initDbConnection();
 
     if ($identifier === NULL) {
       $identifier = $this->requestStack->getCurrentRequest()->getClientIp();
@@ -162,7 +162,7 @@ class Backend implements FloodInterface {
    * @throws \ArangoDBClient\Exception
    */
   public function garbageCollection() {
-    $this->initConnection();
+    $this->initDbConnection();
 
     $query = <<< AQL
     FOR doc IN @@collection
@@ -172,11 +172,11 @@ class Backend implements FloodInterface {
     AQL;
 
     $statement = new Statement(
-      $this->getConnection(),
+      $this->getDbConnection(),
       [
         'query' => $query,
         'bindVars' => [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'expiration' => $this->time->getCurrentTime(),
         ],
       ],
@@ -209,14 +209,14 @@ class Backend implements FloodInterface {
     AQL;
 
     $bindVars = [
-      '@collection' => $this->getCollectionName(),
+      '@collection' => $this->getDbCollectionName(),
       'name' => $name,
       'identifier' => $identifier,
       'createdSince' => $this->time->getCurrentTime() - $window,
     ];
 
     $statement = new Statement(
-      $this->getConnection(),
+      $this->getDbConnection(),
       [
         'query' => $query,
         'bindVars' => $bindVars,

@@ -64,8 +64,8 @@ class CoreStorageTest extends KernelTestBase {
 
     $queue1 = new CoreStorage('q1');
     $queue1
-      ->setCollectionNamePattern($collectionNamePattern)
-      ->setConnection($connectionFactory->get('default'))
+      ->setDbCollectionNamePattern($collectionNamePattern)
+      ->setDbConnection($connectionFactory->get('default'))
       ->setSchemaManager($this->container->get('arangodb.queue_core.schema_manager.default'))
       ->setDocumentConverter($this->container->get('arangodb.queue_core.document_converter.default'))
       ->setTime($this->time)
@@ -74,8 +74,8 @@ class CoreStorageTest extends KernelTestBase {
 
     $queue2 = new CoreStorage('q2');
     $queue2
-      ->setCollectionNamePattern($collectionNamePattern)
-      ->setConnection($connectionFactory->get('default'))
+      ->setDbCollectionNamePattern($collectionNamePattern)
+      ->setDbConnection($connectionFactory->get('default'))
       ->setSchemaManager($this->container->get('arangodb.queue_core.schema_manager.default'))
       ->setDocumentConverter($this->container->get('arangodb.queue_core.document_converter.default'))
       ->setTime($this->time)

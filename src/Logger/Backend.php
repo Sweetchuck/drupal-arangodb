@@ -30,25 +30,25 @@ class Backend implements LoggerInterface {
     SchemaManagerInterface $schemaManager,
     array $options,
   ) {
-    $this->connectionFactory = $connectionFactory;
-    $this->connectionName = $connectionName;
+    $this->dbConnectionFactory = $connectionFactory;
+    $this->dbConnectionName = $connectionName;
     $this->documentConverter = $documentConverter;
     $this->schemaManager = $schemaManager;
     $this->options = $options;
 
-    $this->collectionNamePattern = $options['collectionNamePattern'] ?? 'log';
+    $this->dbCollectionNamePattern = $options['collectionNamePattern'] ?? 'log';
   }
 
-  public function getCollectionNamePlaceholderValues(string $channel = 'unknown'): array {
+  public function getDbCollectionNamePlaceholderValues(string $channel = 'unknown'): array {
     return [
       '{{ channel }}' => $channel,
     ];
   }
 
-  public function getCollectionName(string $channel = 'unknown'): string {
+  public function getDbCollectionName(string $channel = 'unknown'): string {
     return strtr(
-      $this->getCollectionNamePattern(),
-      $this->getCollectionNamePlaceholderValues($channel),
+      $this->getDbCollectionNamePattern(),
+      $this->getDbCollectionNamePlaceholderValues($channel),
     );
   }
 
@@ -58,13 +58,13 @@ class Backend implements LoggerInterface {
    * @throws \ArangoDBClient\Exception
    */
   public function log($level, string|\Stringable $message, array $context = []): void {
-    $collectionName = $this->getCollectionName($context['channel']);
+    $collectionName = $this->getDbCollectionName($context['channel']);
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     $document = $this->documentConverter->logEntryToDocument($level, $message, $context);
-    $this->documentHandler->insert($collectionName, $document);
+    $this->dbDocumentHandler->insert($collectionName, $document);
   }
 
 }

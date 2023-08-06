@@ -262,3 +262,11 @@ services:
     arguments:
       - 'arangodb_queue_advanced_default'
   # endregion
+
+#  # region KeyValue
+#  arangodb.keyvalue_factory.permanent_default:
+#    class: 'Drupal\arangodb\KeyValue\PermanentFactory'
+#
+#  arangodb.keyvalue_factory.expirable_default:
+#    class: ''
+#  # endregion

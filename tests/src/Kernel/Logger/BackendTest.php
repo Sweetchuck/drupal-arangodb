@@ -135,11 +135,11 @@ class BackendTest extends KernelTestBase {
     AQL;
 
     $statement = new Statement(
-      $logger->getConnection(),
+      $logger->getDbConnection(),
       [
         'query' => $query,
         'bindVars' => [
-          '@collection' => $logger->getCollectionName('test'),
+          '@collection' => $logger->getDbCollectionName('test'),
         ],
       ],
     );

@@ -157,7 +157,7 @@ class BackendTest extends KernelTestBase {
     AQL;
 
     $bindVars = [
-      '@collection' => $flood1->getCollectionName(),
+      '@collection' => $flood1->getDbCollectionName(),
     ];
 
     $connection = $this->createConnectionFactory()->get('default');

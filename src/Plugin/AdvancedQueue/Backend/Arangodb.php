@@ -92,7 +92,7 @@ class Arangodb extends BackendBase implements
     SchemaManagerInterface $schemaManager,
     AdvancedDocumentConverterInterface $documentConverter,
   ) {
-    $this->connectionFactory = $connectionFactory;
+    $this->dbConnectionFactory = $connectionFactory;
     $this
       ->setSchemaManager($schemaManager)
       ->setDocumentConverter($documentConverter);
@@ -103,7 +103,7 @@ class Arangodb extends BackendBase implements
     return $this->queueId;
   }
 
-  public function getCollectionNamePlaceholderValues(): array {
+  public function getDbCollectionNamePlaceholderValues(): array {
     return [
       '{{ queue.name }}' => $this->getQueueName(),
     ];
@@ -116,8 +116,8 @@ class Arangodb extends BackendBase implements
     parent::setConfiguration($configuration);
 
     $configuration = $this->getConfiguration();
-    $this->setCollectionNamePattern($configuration['storage_options']['collection_name_pattern']);
-    $this->setConnection($this->connectionFactory->get($configuration['connection_name']));
+    $this->setDbCollectionNamePattern($configuration['storage_options']['collection_name_pattern']);
+    $this->setDbConnection($this->dbConnectionFactory->get($configuration['connection_name']));
   }
 
   /**
@@ -163,7 +163,7 @@ class Arangodb extends BackendBase implements
       '#title' => $this->t('Connection name'),
       '#description' => $this->t('Name of the ArangoDB connection defined in <code>arangodb.connection_options</code> service parameter or in <code>$settings[\'arangodb.connection_options\']</code> array in <code>settings.php</code>.'),
       '#empty_option' => $this->t('- Select -'),
-      '#options' => $this->connectionFactory->getConnectionNames(),
+      '#options' => $this->dbConnectionFactory->getConnectionNames(),
       '#default_value' => $config['connection_name'],
     ];
 
@@ -299,7 +299,7 @@ class Arangodb extends BackendBase implements
 
     $values = $form_state->getValue($form['#parents']);
     try {
-      $this->connectionFactory->get($values['connection_name']);
+      $this->dbConnectionFactory->get($values['connection_name']);
     } catch (\Exception $e) {
       $form_state->setErrorByName(
          "{$element_name_prefix}connection_name",
@@ -342,8 +342,8 @@ class Arangodb extends BackendBase implements
    */
   public function createQueue() {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
   }
 
   /**
@@ -352,10 +352,10 @@ class Arangodb extends BackendBase implements
    * @throws \ArangoDBClient\Exception
    */
   public function cleanupQueue() {
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
     $this
-      ->initConnection()
-      ->initCollection($collectionName)
+      ->initDbConnection()
+      ->initDbCollection($collectionName)
       ->releaseStuckJobs()
       ->cleanupFinishedJobs();
   }
@@ -403,7 +403,7 @@ class Arangodb extends BackendBase implements
         AQL;
 
         $bindVars = [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'queueId' => $this->queueId,
           'state' => $state,
           'limitCount' => $numOfJobs[$state] - $amountToKeep,
@@ -423,7 +423,7 @@ class Arangodb extends BackendBase implements
         AQL;
 
         $bindVars = [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'queueId' => $this->queueId,
           'state' => $state,
           'processed' => $this->time->getCurrentTime() - ($threshold['time'] * 86400),
@@ -446,17 +446,17 @@ class Arangodb extends BackendBase implements
    * @throws \ArangoDBClient\Exception
    */
   public function deleteQueue() {
-    $this->initConnection();
+    $this->initDbConnection();
 
-    $collectionName = $this->getCollectionName();
-    if (!$this->collectionHandler->has($collectionName)) {
+    $collectionName = $this->getDbCollectionName();
+    if (!$this->dbCollectionHandler->has($collectionName)) {
       // Nothing to delete.
       return;
     }
 
     if (!$this->isShared()) {
       // Collection is dedicated only for this $queueName.
-      $this->collectionHandler->drop($collectionName);
+      $this->dbCollectionHandler->drop($collectionName);
 
       return;
     }
@@ -474,10 +474,10 @@ class Arangodb extends BackendBase implements
    * @throws \ArangoDBClient\Exception
    */
   public function countJobs() {
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     $values = [
       Job::STATE_QUEUED => 0,
@@ -531,11 +531,11 @@ class Arangodb extends BackendBase implements
    * @throws \ArangoDBClient\Exception
    */
   public function enqueueJobs(array $jobs, $delay = 0) {
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
 
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     // @todo Support transactions.
     $documentConverter = $this->getDocumentConverter();
@@ -555,7 +555,7 @@ class Arangodb extends BackendBase implements
         $documents[] = $documentConverter->jobToDocument($collectionName, $job);
       }
 
-      $response = $this->documentHandler->insertMany($this->collection, $documents);
+      $response = $this->dbDocumentHandler->insertMany($this->dbCollection, $documents);
       foreach ($response as $index => $row) {
         $current_jobs_set[$index]->setId($row['_key']);
       }
@@ -578,17 +578,17 @@ class Arangodb extends BackendBase implements
       ));
     }
 
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
 
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     $job->setNumRetries($job->getNumRetries() + 1);
     $job->setAvailableTime($this->time->getCurrentTime() + $delay);
     $job->setState(Job::STATE_QUEUED);
     $this
-      ->documentHandler
+      ->dbDocumentHandler
       ->update($this->documentConverter->jobToDocument($collectionName, $job));
   }
 
@@ -599,10 +599,10 @@ class Arangodb extends BackendBase implements
    */
   public function claimJob() {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
 
     $query = <<< AQL
       FOR doc IN @@collection
@@ -661,7 +661,7 @@ class Arangodb extends BackendBase implements
       $document->set('expires', $this->time->getCurrentTime() + $this->configuration['lease_time']);
 
       try {
-        $this->documentHandler->update($document);
+        $this->dbDocumentHandler->update($document);
         $job->setState($document->get('state'));
         $job->setExpiresTime($document->get('expires'));
 
@@ -679,15 +679,15 @@ class Arangodb extends BackendBase implements
    * @throws \ArangoDBClient\Exception
    */
   public function onSuccess(Job $job) {
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
 
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     $job->setProcessedTime($this->time->getCurrentTime());
     $this
-      ->documentHandler
+      ->dbDocumentHandler
       ->update($this->documentConverter->jobToDocument($collectionName, $job));
   }
 
@@ -697,16 +697,16 @@ class Arangodb extends BackendBase implements
    * @throws \ArangoDBClient\Exception
    */
   public function onFailure(Job $job) {
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
 
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     $job->setState(Job::STATE_FAILURE);
     $job->setProcessedTime($this->time->getCurrentTime());
     $this
-      ->documentHandler
+      ->dbDocumentHandler
       ->update($this->documentConverter->jobToDocument($collectionName, $job));
   }
 
@@ -717,8 +717,8 @@ class Arangodb extends BackendBase implements
    */
   public function releaseJob($job_id) {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     $query = <<< AQL
       UPDATE {
@@ -733,7 +733,7 @@ class Arangodb extends BackendBase implements
       $this->executeStatement(
         $query,
         [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'key' => $job_id,
           'state' => Job::STATE_QUEUED,
           'expires' => 0,
@@ -750,8 +750,8 @@ class Arangodb extends BackendBase implements
    */
   public function releaseStuckJobs(): static {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     $query = <<< AQL
     FOR doc IN @@collection
@@ -774,7 +774,7 @@ class Arangodb extends BackendBase implements
       $this->executeStatement(
         $query,
         [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           '@queueId' => $this->queueId,
           'now' => $this->time->getCurrentTime(),
           'stateCurrent' => Job::STATE_PROCESSING,
@@ -795,13 +795,13 @@ class Arangodb extends BackendBase implements
    * @throws \ArangoDBClient\Exception
    */
   public function deleteJob($job_id) {
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     try {
-      $this->documentHandler->removeById($collectionName, $job_id);
+      $this->dbDocumentHandler->removeById($collectionName, $job_id);
     }
     catch (ArangoDBServerException $e) {
       $details = $e->getDetails();
@@ -821,11 +821,11 @@ class Arangodb extends BackendBase implements
    */
   public function loadJob($job_id) {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     try {
-      $document = $this->documentHandler->getById($this->collection, $job_id);
+      $document = $this->dbDocumentHandler->getById($this->dbCollection, $job_id);
     }
     catch (ArangoDBException $e) {
       throw new \InvalidArgumentException('', 404, $e);
@@ -841,7 +841,7 @@ class Arangodb extends BackendBase implements
    */
   protected function isShared(): bool {
     return !str_contains(
-      $this->getCollectionNamePattern(),
+      $this->getDbCollectionNamePattern(),
       '{{ queue.name }}',
     );
   }
@@ -860,7 +860,7 @@ class Arangodb extends BackendBase implements
     $this->executeStatement(
       $query,
       [
-        '@collection' => $this->getCollectionName(),
+        '@collection' => $this->getDbCollectionName(),
         'queueId' => $this->queueId,
       ],
     );
@@ -875,7 +875,7 @@ class Arangodb extends BackendBase implements
    */
   protected function executeStatement(string $query, array $bindVars): Cursor {
     $statement = new Statement(
-      $this->connection,
+      $this->dbConnection,
       [
         'query' => $query,
         'bindVars' => $bindVars,

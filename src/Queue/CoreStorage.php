@@ -96,11 +96,11 @@ class CoreStorage implements
 
   public function __construct(string $queueName) {
     $this
-      ->setCollectionNamePattern('queue')
+      ->setDbCollectionNamePattern('queue')
       ->setQueueName($queueName);
   }
 
-  public function getCollectionNamePlaceholderValues(): array {
+  public function getDbCollectionNamePlaceholderValues(): array {
     return [
       '{{ queue.name }}' => $this->getQueueName(),
     ];
@@ -114,8 +114,8 @@ class CoreStorage implements
    */
   public function createItem($data) {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     if (!$this->isStorageWritable()) {
       throw new \Exception();
@@ -126,12 +126,12 @@ class CoreStorage implements
         ->getDocumentConverter()
         ->dataToDocument($this->getQueueName(), $data);
       $this
-        ->documentHandler
-        ->insert($this->collection, $document);
+        ->dbDocumentHandler
+        ->insert($this->dbCollection, $document);
 
       return $document->getInternalKey();
     }
-    catch (\Exception $e) {
+    catch (\Exception) {
       // @todo Error log.
       return FALSE;
     }
@@ -144,8 +144,8 @@ class CoreStorage implements
    */
   public function numberOfItems() {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     if (!$this->isStorageReadable()) {
       return 0;
@@ -161,7 +161,7 @@ class CoreStorage implements
     $result = $this->executeStatement(
       $query,
       [
-        '@collection' => $this->getCollectionName(),
+        '@collection' => $this->getDbCollectionName(),
         'queueName' => $this->getQueueName(),
       ],
     );
@@ -176,10 +176,10 @@ class CoreStorage implements
    */
   public function claimItem($lease_time = 3600) {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
     $queueName = $this->getQueueName();
 
     $query = <<< AQL
@@ -231,7 +231,7 @@ class CoreStorage implements
       // should really expire.
       $document->set('expire', $this->getTime()->getCurrentTime() + $lease_time);
       try {
-        $this->documentHandler->update($document);
+        $this->dbDocumentHandler->update($document);
 
         return $item;
       }
@@ -247,13 +247,13 @@ class CoreStorage implements
    * @throws \ArangoDBClient\Exception
    */
   public function deleteItem($item) {
-    $collectionName = $this->getCollectionName();
+    $collectionName = $this->getDbCollectionName();
     $this
-      ->initConnection()
-      ->initCollection($collectionName);
+      ->initDbConnection()
+      ->initDbCollection($collectionName);
 
     try {
-      $this->documentHandler->removeById($collectionName, $item->item_id);
+      $this->dbDocumentHandler->removeById($collectionName, $item->item_id);
     }
     catch (ArangoDBServerException $e) {
       $details = $e->getDetails();
@@ -273,8 +273,8 @@ class CoreStorage implements
    */
   public function releaseItem($item) {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     $query = <<< AQL
       UPDATE {
@@ -288,7 +288,7 @@ class CoreStorage implements
       $this->executeStatement(
         $query,
         [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'key' => $item->item_id,
         ],
       );
@@ -305,8 +305,8 @@ class CoreStorage implements
    */
   public function createQueue() {
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
   }
 
   /**
@@ -315,17 +315,17 @@ class CoreStorage implements
    * @throws \ArangoDBClient\Exception
    */
   public function deleteQueue() {
-    $this->initConnection();
+    $this->initDbConnection();
 
-    $collectionName = $this->getCollectionName();
-    if (!$this->collectionHandler->has($collectionName)) {
+    $collectionName = $this->getDbCollectionName();
+    if (!$this->dbCollectionHandler->has($collectionName)) {
       // Nothing to delete.
       return;
     }
 
     if (!$this->isShared()) {
       // Collection is dedicated only for this $queueName.
-      $this->collectionHandler->drop($collectionName);
+      $this->dbCollectionHandler->drop($collectionName);
 
       return;
     }
@@ -346,8 +346,8 @@ class CoreStorage implements
     // @todo Do not create the collection if it is not exists,
     // just skip the garbage collection.
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     try {
       $this
@@ -370,8 +370,8 @@ class CoreStorage implements
     }
 
     $this
-      ->initConnection()
-      ->initCollection($this->getCollectionName());
+      ->initDbConnection()
+      ->initDbCollection($this->getDbCollectionName());
 
     $query = <<< AQL
       UPDATE {
@@ -385,7 +385,7 @@ class CoreStorage implements
       $this->executeStatement(
         $query,
         [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'key' => $item->item_id,
           'expire' => $this->getTime()->getCurrentTime() + $delay,
         ],
@@ -414,7 +414,7 @@ class CoreStorage implements
     $this->executeStatement(
       $query,
       [
-        '@collection' => $this->getCollectionName(),
+        '@collection' => $this->getDbCollectionName(),
         'queueName' => $this->getQueueName(),
       ],
     );
@@ -438,7 +438,7 @@ class CoreStorage implements
    */
   protected function executeStatement(string $query, array $bindVars): Cursor {
     $statement = new Statement(
-      $this->connection,
+      $this->dbConnection,
       [
         'query' => $query,
         'bindVars' => $bindVars,
@@ -466,7 +466,7 @@ class CoreStorage implements
    */
   protected function isShared(): bool {
     return !str_contains(
-      $this->getCollectionNamePattern(),
+      $this->getDbCollectionNamePattern(),
       '{{ queue.name }}',
     );
   }
@@ -494,7 +494,7 @@ class CoreStorage implements
     $this->executeStatement(
       $query,
       [
-        '@collection' => $this->getCollectionName(),
+        '@collection' => $this->getDbCollectionName(),
         'queueNamePrefix' => 'drupal_batch:',
         'created' => $this->getTime()->getRequestTime() - $this->getBatchTimeout(),
       ],
@@ -519,7 +519,7 @@ class CoreStorage implements
       $this->executeStatement(
         $query,
         [
-          '@collection' => $this->getCollectionName(),
+          '@collection' => $this->getDbCollectionName(),
           'queueName' => $this->getQueueName(),
           'expire' => $this->getTime()->getRequestTime(),
         ],

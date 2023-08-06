@@ -16,17 +16,17 @@ use ArangoDBClient\UpdatePolicy;
  */
 trait ConnectionTrait {
 
-  protected ConnectionFactory $connectionFactory;
+  protected ConnectionFactory $dbConnectionFactory;
 
-  protected string $connectionName = 'default';
+  protected string $dbConnectionName = 'default';
 
-  protected ?Collection $collection = NULL;
+  protected ?Collection $dbCollection = NULL;
 
-  protected ?CollectionHandler $collectionHandler = NULL;
+  protected ?CollectionHandler $dbCollectionHandler = NULL;
 
-  protected ?DocumentHandler $documentHandler = NULL;
+  protected ?DocumentHandler $dbDocumentHandler = NULL;
 
-  protected string $uri = '';
+  protected string $dbUri = '';
 
   /**
    * Keys are \ArangoDBClient\ConnectionOptions::OPTION_*.
@@ -35,21 +35,21 @@ trait ConnectionTrait {
    *
    * @see \ArangoDBClient\ConnectionOptions
    */
-  protected array $connectionOptions = [];
+  protected array $dbConnectionOptions = [];
 
   /**
    * @phpstan-return CacheBackendArangoDbConnectionOptions
    */
-  public function getConnectionOptions(): array {
-    return $this->connectionOptions;
+  public function getDbConnectionOptions(): array {
+    return $this->dbConnectionOptions;
   }
 
   /**
-   * @phpstan-param CacheBackendArangoDbConnectionOptions $connectionOptions
+   * @phpstan-param CacheBackendArangoDbConnectionOptions $dbConnectionOptions
    */
-  public function setConnectionOptions(array $connectionOptions): static {
-    $this->connectionOptions = $connectionOptions;
-    $this->initUri();
+  public function setDbConnectionOptions(array $dbConnectionOptions): static {
+    $this->dbConnectionOptions = $dbConnectionOptions;
+    $this->initDbUri();
 
     return $this;
   }
@@ -57,7 +57,7 @@ trait ConnectionTrait {
   /**
    * @phpstan-return CacheBackendArangoDbConnectionOptions
    */
-  protected function getDefaultConnectionOptions(): array {
+  protected function getDefaultDbConnectionOptions(): array {
     return [
       ConnectionOptions::OPTION_ENDPOINT => 'tcp://127.0.0.1:8529',
       ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
@@ -69,26 +69,26 @@ trait ConnectionTrait {
       ConnectionOptions::OPTION_UPDATE_POLICY => UpdatePolicy::LAST,
       ConnectionOptions::OPTION_CREATE => FALSE,
       // @todo This is not a good default value.
-      ConnectionOptions::OPTION_DATABASE => $this->getCollectionName(),
+      ConnectionOptions::OPTION_DATABASE => $this->getDbCollectionName(),
     ];
   }
 
   /**
    * @phpstan-return CacheBackendArangoDbConnectionOptions
    */
-  protected function getFinalConnectionOptions(): array {
-    return $this->getConnectionOptions() + $this->getDefaultConnectionOptions();
+  protected function getFinalDbConnectionOptions(): array {
+    return $this->getDbConnectionOptions() + $this->getDefaultDbConnectionOptions();
   }
 
-  protected ?Connection $connection = NULL;
+  protected ?Connection $dbConnection = NULL;
 
-  public function getConnection(): ?Connection {
-    return $this->connection;
+  public function getDbConnection(): ?Connection {
+    return $this->dbConnection;
   }
 
-  public function setConnection(?Connection $connection): static {
-    $this->resetConnection();
-    $this->connection = $connection;
+  public function setDbConnection(?Connection $dbConnection): static {
+    $this->resetDbConnection();
+    $this->dbConnection = $dbConnection;
 
     return $this;
   }
@@ -96,55 +96,55 @@ trait ConnectionTrait {
   /**
    * @throws \ArangoDBClient\Exception
    */
-  protected function initConnection(): static {
-    if (!$this->connection) {
-      $this->connection = $this->connectionFactory->get($this->connectionName);
+  protected function initDbConnection(): static {
+    if (!$this->dbConnection) {
+      $this->dbConnection = $this->dbConnectionFactory->get($this->dbConnectionName);
     }
 
-    if (!$this->collectionHandler) {
-      $this->collectionHandler = new CollectionHandler($this->connection);
+    if (!$this->dbCollectionHandler) {
+      $this->dbCollectionHandler = new CollectionHandler($this->dbConnection);
       // @todo Currently $this->documentConverter->setDocumentClass() can
       // be changed from outside and the $this->collectionHandler->setDocumentClass()
       // won't be updated.
-      $this->collectionHandler->setDocumentClass($this->documentConverter->getDocumentClass());
+      $this->dbCollectionHandler->setDocumentClass($this->documentConverter->getDocumentClass());
     }
 
-    if (!$this->documentHandler) {
-      $this->documentHandler = new DocumentHandler($this->connection);
-    }
-
-    return $this;
-  }
-
-  protected function initCollection(string $collectionName): static {
-    if (!$this->collection) {
-      $this->collection = $this->schemaManager->createCollection($this->collectionHandler, $collectionName);
+    if (!$this->dbDocumentHandler) {
+      $this->dbDocumentHandler = new DocumentHandler($this->dbConnection);
     }
 
     return $this;
   }
 
-  protected function resetConnection(): static {
-    $this->connection = NULL;
-    $this->collectionHandler = NULL;
-    $this->collection = NULL;
-    $this->documentHandler = NULL;
+  protected function initDbCollection(string $collectionName): static {
+    if (!$this->dbCollection) {
+      $this->dbCollection = $this->schemaManager->createCollection($this->dbCollectionHandler, $collectionName);
+    }
 
     return $this;
   }
 
-  protected string $collectionNamePattern = '';
+  protected function resetDbConnection(): static {
+    $this->dbConnection = NULL;
+    $this->dbCollectionHandler = NULL;
+    $this->dbCollection = NULL;
+    $this->dbDocumentHandler = NULL;
 
-  public function getCollectionNamePattern(): string {
-    return $this->collectionNamePattern;
+    return $this;
   }
 
-  public function setCollectionNamePattern(string $collectionNamePattern): static {
+  protected string $dbCollectionNamePattern = '';
+
+  public function getDbCollectionNamePattern(): string {
+    return $this->dbCollectionNamePattern;
+  }
+
+  public function setDbCollectionNamePattern(string $collectionNamePattern): static {
     if ($collectionNamePattern === '') {
       throw new \InvalidArgumentException('ArangoDB collection name pattern can not be empty');
     }
 
-    $this->collectionNamePattern = $collectionNamePattern;
+    $this->dbCollectionNamePattern = $collectionNamePattern;
 
     return $this;
   }
@@ -152,35 +152,35 @@ trait ConnectionTrait {
   /**
    * @return array<string, string>
    */
-  public function getCollectionNamePlaceholderValues(): array {
+  public function getDbCollectionNamePlaceholderValues(): array {
     return [];
   }
 
-  public function getCollectionName(): string {
+  public function getDbCollectionName(): string {
     return strtr(
-      $this->getCollectionNamePattern(),
-      $this->getCollectionNamePlaceholderValues(),
+      $this->getDbCollectionNamePattern(),
+      $this->getDbCollectionNamePlaceholderValues(),
     );
   }
 
-  protected function initUri(): static {
-    $options = $this->getFinalConnectionOptions();
-    $this->uri = sprintf(
+  protected function initDbUri(): static {
+    $options = $this->getFinalDbConnectionOptions();
+    $this->dbUri = sprintf(
       '%s/%s#%s',
       $options[ConnectionOptions::OPTION_ENDPOINT] ?? '',
       $options[ConnectionOptions::OPTION_DATABASE] ?? '',
-      $this->getCollectionName(),
+      $this->getDbCollectionName(),
     );
 
     return $this;
   }
 
   protected function isStorageReadable(): bool {
-    return $this->collection && $this->collectionHandler;
+    return $this->dbCollection && $this->dbCollectionHandler;
   }
 
   protected function isStorageWritable(): bool {
-    return $this->collection || $this->documentHandler;
+    return $this->dbCollection || $this->dbDocumentHandler;
   }
 
 }

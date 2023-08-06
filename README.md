@@ -5,20 +5,21 @@ This module uses ArangoDB as data storage for different services.
 
 ## Features
 
-| Feature                      | status             |
-|------------------------------|--------------------|
-| [Cache backend]              | &#x2705; POC ready |
-| [Queue core]                 | &#x2705; POC ready |
-| [Queue advanced]             | &#x2705; POC ready |
-| [Logger]                     | &#x2705; POC ready |
-| [Lock]                       | &#x2705; POC ready |
-| [Flood]                      | &#x2705; POC ready |
-| [Session]                    | not yet            |
-| [Webform submission storage] | not yet            |
-| [SearchAPI server]           | not yet            |
-| [Config entity storage]      | not yet            |
-| [Content entity storage]     | not yet            |
-| [Full database driver]       | not yet            |
+| Feature                  | status             |
+|--------------------------|--------------------|
+| [Cache backend]          | &#x2705; POC ready |
+| [Queue core]             | &#x2705; POC ready |
+| [Queue advanced]         | &#x2705; POC ready |
+| [Logger]                 | &#x2705; POC ready |
+| [Lock]                   | &#x2705; POC ready |
+| [Flood]                  | &#x2705; POC ready |
+| [State]                  | not yet            |
+| [KeyValue]               | not yet            |
+| [Session]                | not yet            |
+| [SearchAPI server]       | not yet            |
+| [Config entity storage]  | not yet            |
+| [Content entity storage] | not yet            |
+| [Full database driver]   | not yet            |
 
 
 ## How to setup ArangoDB connections
@@ -40,6 +41,9 @@ parameters:
       Reconnect: true
       policy: 'last'
       createCollection: false
+      AuthType: 'Basic'
+      AuthUser: 'me'
+      AuthPasswd: 'mySecret01'
       database: 'cache'
 ```
 
@@ -85,9 +89,8 @@ $settings['cache']['bins']['config'] = 'cache.backend.arangodb_no_serializer';
 
 **Remaining tasks:**
 
-1. advancedqueue integration
-2. tests
-3. documentation
+1. tests
+2. documentation
 
 **settings.local.php**
 
@@ -139,6 +142,16 @@ $settings['container_yamls']['arangodb.flood'] = 'modules/contrib/arangodb/arang
 ```
 
 
+## Feature - State
+
+@todo
+
+
+## Feature - KeyValue
+
+@todo
+
+
 ## Feature - Session
 
 @todo list
@@ -149,11 +162,6 @@ $settings['container_yamls']['arangodb.flood'] = 'modules/contrib/arangodb/arang
    3. Example implementation: [symfony/http-foundation#/Session/Storage/Handler](https://github.com/symfony/http-foundation/tree/6.2/Session/Storage/Handler)
    4. Framework (Drupal) independent.
 2. Drupal integration.
-
-
-## Feature - Webform submission storage
-
-@todo
 
 
 ## Feature - Config entity storage
@@ -186,9 +194,11 @@ $settings['container_yamls']['arangodb.flood'] = 'modules/contrib/arangodb/arang
 
 [Flood]: #feature---flood
 
-[Session]: #feature---session
+[State]: #feature---state
 
-[Webform submission storage]: #feature---webform-submission-storage
+[KeyValue]: #feature---keyvalue
+
+[Session]: #feature---session
 
 [Config entity storage]: #feature---config-entity-storage
 
