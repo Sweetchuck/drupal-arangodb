@@ -16,7 +16,6 @@ use Drupal\Core\Queue\ReliableQueueInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
-use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
 
 /**
  * Queue item storage handler.
@@ -62,18 +61,6 @@ class CoreStorage implements
 
   public function setDocumentConverter(CoreDocumentConverterInterface $documentConverter): static {
     $this->documentConverter = $documentConverter;
-
-    return $this;
-  }
-
-  protected SchemaManagerInterface $schemaManager;
-
-  public function getSchemaManager(): SchemaManagerInterface {
-    return $this->schemaManager;
-  }
-
-  public function setSchemaManager(SchemaManagerInterface $schemaManager): static {
-    $this->schemaManager = $schemaManager;
 
     return $this;
   }

@@ -41,11 +41,9 @@ class DevelHelperLockCommands extends DrushCommands implements BuilderAwareInter
    * Call ::acquire on a request lock backend.
    *
    * @param string $name
-   *   Name of the lock,
-   *
+   *   Name of the lock.
    * @param string $timeout
    *   Float in seconds.
-   *
    * @param string $sleep
    *   Integer in seconds.
    *
@@ -54,8 +52,6 @@ class DevelHelperLockCommands extends DrushCommands implements BuilderAwareInter
    * @bootstrap full
    *
    * @hidden
-   *
-   * @throws \ArangoDBClient\Exception
    */
   public function cmdLockRequestAcquireExecute(
     string $name,
@@ -81,11 +77,9 @@ class DevelHelperLockCommands extends DrushCommands implements BuilderAwareInter
    * Call ::acquire on a persistent lock backend.
    *
    * @param string $name
-   *   Name of the lock,
-   *
+   *   Name of the lock.
    * @param string $timeout
    *   Float in seconds.
-   *
    * @param string $sleep
    *   Integer in seconds.
    *
@@ -94,8 +88,6 @@ class DevelHelperLockCommands extends DrushCommands implements BuilderAwareInter
    * @bootstrap full
    *
    * @hidden
-   *
-   * @throws \ArangoDBClient\Exception
    */
   public function cmdLockPersistentAcquireExecute(
     string $name,

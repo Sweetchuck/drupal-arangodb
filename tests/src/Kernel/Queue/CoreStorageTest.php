@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace Drupal\Tests\arangodb\Kernel\Queue;
 
 use Drupal\arangodb\Queue\CoreStorage;

@@ -9,7 +9,7 @@ use Drupal\Core\KeyValueStore\KeyValueFactoryInterface;
 use Drupal\Core\KeyValueStore\KeyValueStoreInterface;
 use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
 
-class PermanentFactory implements KeyValueFactoryInterface {
+class StoreSimpleFactory implements KeyValueFactoryInterface {
 
 
   protected ConnectionFactoryInterface $connectionFactory;
@@ -38,18 +38,16 @@ class PermanentFactory implements KeyValueFactoryInterface {
     return $this;
   }
 
-  public function __construct(
-    ConnectionFactoryInterface $connectionFactory,
-    string $connectionName,
-    SchemaManagerInterface $schemaManager,
-    array $options,
-  ) {
-    $this->connectionName = $connectionName;
+  protected DocumentConverterInterface $documentConverter;
 
-    $this
-      ->setConnectionFactory($connectionFactory)
-      ->setSchemaManager($schemaManager)
-      ->setOptions($options);
+  public function getDocumentConverter(): DocumentConverterInterface {
+    return $this->documentConverter;
+  }
+
+  public function setDocumentConverter(DocumentConverterInterface $documentConverter): static {
+    $this->documentConverter = $documentConverter;
+
+    return $this;
   }
 
   protected array $options = [];
@@ -64,6 +62,22 @@ class PermanentFactory implements KeyValueFactoryInterface {
     return $this;
   }
 
+  public function __construct(
+    ConnectionFactoryInterface $connectionFactory,
+    string $connectionName,
+    SchemaManagerInterface $schemaManager,
+    DocumentConverterInterface $documentConverter,
+    array $options,
+  ) {
+    $this->connectionName = $connectionName;
+
+    $this
+      ->setConnectionFactory($connectionFactory)
+      ->setSchemaManager($schemaManager)
+      ->setDocumentConverter($documentConverter)
+      ->setOptions($options);
+  }
+
   public function getDefaultOptions(): array {
     return [];
   }
@@ -75,14 +89,18 @@ class PermanentFactory implements KeyValueFactoryInterface {
     );
   }
 
+  /**
+   * @return \Drupal\arangodb\KeyValue\Store
+   */
   public function get($collection): KeyValueStoreInterface {
     $options = $this->getFinalOptions();
 
-    $storage = new PermanentStorage($collection);
+    $storage = new Store($collection);
     $storage
-      ->setCollectionNamePattern($options['collection_name_pattern'])
-      ->setConnection($this->getConnectionFactory()->get($this->connectionName))
-      ->setSchemaManager($this->getSchemaManager());
+      ->setDbCollectionNamePattern($options['collection_name_pattern'])
+      ->setDbConnection($this->getConnectionFactory()->get($this->connectionName))
+      ->setSchemaManager($this->getSchemaManager())
+      ->setDocumentConverter($this->getDocumentConverter());
 
     return $storage;
   }

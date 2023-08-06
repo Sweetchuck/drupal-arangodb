@@ -19,8 +19,6 @@ class Backend implements LoggerInterface {
 
   protected DocumentConverterInterface $documentConverter;
 
-  protected SchemaManagerInterface $schemaManager;
-
   protected array $options;
 
   public function __construct(

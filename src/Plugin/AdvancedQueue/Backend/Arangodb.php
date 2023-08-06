@@ -55,18 +55,6 @@ class Arangodb extends BackendBase implements
     return $this;
   }
 
-  protected SchemaManagerInterface $schemaManager;
-
-  public function getSchemaManager(): SchemaManagerInterface {
-    return $this->schemaManager;
-  }
-
-  public function setSchemaManager(SchemaManagerInterface $schemaManager): static {
-    $this->schemaManager = $schemaManager;
-
-    return $this;
-  }
-
   public function getLogger(): ?LoggerInterface {
     return $this->logger;
   }
@@ -161,7 +149,7 @@ class Arangodb extends BackendBase implements
       '#type' => 'select',
       '#required' => TRUE,
       '#title' => $this->t('Connection name'),
-      '#description' => $this->t('Name of the ArangoDB connection defined in <code>arangodb.connection_options</code> service parameter or in <code>$settings[\'arangodb.connection_options\']</code> array in <code>settings.php</code>.'),
+      '#description' => $this->t("Name of the ArangoDB connection defined in <code>arangodb.connection_options</code> service parameter or in <code>\$settings['arangodb.connection_options']</code> array in <code>settings.php</code>."),
       '#empty_option' => $this->t('- Select -'),
       '#options' => $this->dbConnectionFactory->getConnectionNames(),
       '#default_value' => $config['connection_name'],
@@ -300,7 +288,8 @@ class Arangodb extends BackendBase implements
     $values = $form_state->getValue($form['#parents']);
     try {
       $this->dbConnectionFactory->get($values['connection_name']);
-    } catch (\Exception $e) {
+    }
+    catch (\Exception $e) {
       $form_state->setErrorByName(
          "{$element_name_prefix}connection_name",
         $this->t(
@@ -361,7 +350,7 @@ class Arangodb extends BackendBase implements
   }
 
   /**
-   * @throws ArangoDBException
+   * @throws \ArangoDBClient\Exception
    */
   protected function cleanupFinishedJobs(): static {
     $config = $this->getConfiguration();

@@ -71,6 +71,27 @@ parameters:
     tagRegexPattern: ~
   # endregion
 
+  # region KeyValue
+  arangodb.keyvalue.factory.options.shared:
+    collection_name_pattern: 'keyvalue_shared'
+
+  arangodb.keyvalue.factory.options.dedicated:
+    collection_name_pattern: 'keyvalue_dedicated_{{ collection }}'
+
+  arangodb.keyvalue.schema_manager.options.default: {}
+  #    ##
+  #    # @see \ArangoDBClient\CollectionHandler::create
+  #    # @see \Sweetchuck\CacheBackend\ArangoDb\SchemaManager::collectionOptions
+  #    ##
+  #    collectionOptions: {}
+  #
+  #    ##
+  #    # @see \Sweetchuck\CacheBackend\ArangoDb\SchemaManager::indexDefinitions
+  #    ##
+  #    indexDefinitions: {}
+
+  # endregion
+
   # region Queue core
   arangodb.queue_core.storage.options.shared:
     collection_name_pattern: 'queue_core_shared'
@@ -263,10 +284,98 @@ services:
       - 'arangodb_queue_advanced_default'
   # endregion
 
-#  # region KeyValue
-#  arangodb.keyvalue_factory.permanent_default:
-#    class: 'Drupal\arangodb\KeyValue\PermanentFactory'
-#
-#  arangodb.keyvalue_factory.expirable_default:
-#    class: ''
-#  # endregion
+  # region KeyValue
+  arangodb.keyvalue.document_converter.php:
+    class: 'Drupal\arangodb\KeyValue\DocumentConverter'
+    arguments:
+      - '@arangodb.serializer.native'
+      -
+  arangodb.keyvalue.document_converter.loafer:
+    class: 'Drupal\arangodb\KeyValue\DocumentConverter'
+    arguments:
+      - '@arangodb.serializer.loafer'
+
+  arangodb.keyvalue.schema_manager.default:
+    class: 'Drupal\arangodb\KeyValue\SchemaManager'
+    calls:
+      -
+        - 'setOptions'
+        -
+          - '%arangodb.keyvalue.schema_manager.options.default%'
+
+  arangodb.keyvalue.factory.simple_shared_php:
+    class: 'Drupal\arangodb\KeyValue\StoreSimpleFactory'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.keyvalue.schema_manager.default'
+      - '@arangodb.keyvalue.document_converter.php'
+      - '%arangodb.keyvalue.factory.options.shared%'
+
+  arangodb.keyvalue.factory.simple_shared_loafer:
+    class: 'Drupal\arangodb\KeyValue\StoreSimpleFactory'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.keyvalue.schema_manager.default'
+      - '@arangodb.keyvalue.document_converter.loafer'
+      - '%arangodb.keyvalue.factory.options.shared%'
+
+  arangodb.keyvalue.factory.simple_dedicated_php:
+    class: 'Drupal\arangodb\KeyValue\StoreSimpleFactory'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.keyvalue.schema_manager.default'
+      - '@arangodb.keyvalue.document_converter.php'
+      - '%arangodb.keyvalue.factory.options.dedicated%'
+
+  arangodb.keyvalue.factory.simple_dedicated_loafer:
+    class: 'Drupal\arangodb\KeyValue\StoreSimpleFactory'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.keyvalue.schema_manager.default'
+      - '@arangodb.keyvalue.document_converter.loafer'
+      - '%arangodb.keyvalue.factory.options.dedicated%'
+
+  arangodb.keyvalue.factory.expirable_shared_php:
+    class: 'Drupal\arangodb\KeyValue\StoreExpirableFactory'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.keyvalue.schema_manager.default'
+      - '@arangodb.keyvalue.document_converter.php'
+      - '%arangodb.keyvalue.factory.options.shared%'
+      - '@datetime.time'
+
+  arangodb.keyvalue.factory.expirable_shared_loafer:
+    class: 'Drupal\arangodb\KeyValue\StoreExpirableFactory'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.keyvalue.schema_manager.default'
+      - '@arangodb.keyvalue.document_converter.loafer'
+      - '%arangodb.keyvalue.factory.options.shared%'
+      - '@datetime.time'
+
+  arangodb.keyvalue.factory.expirable_dedicated_php:
+    class: 'Drupal\arangodb\KeyValue\StoreExpirableFactory'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.keyvalue.schema_manager.default'
+      - '@arangodb.keyvalue.document_converter.php'
+      - '%arangodb.keyvalue.factory.options.dedicated%'
+      - '@datetime.time'
+
+  arangodb.keyvalue.factory.expirable_dedicated_loafer:
+    class: 'Drupal\arangodb\KeyValue\StoreExpirableFactory'
+    arguments:
+      - '@arangodb.connection_factory'
+      - 'default'
+      - '@arangodb.keyvalue.schema_manager.default'
+      - '@arangodb.keyvalue.document_converter.loafer'
+      - '%arangodb.keyvalue.factory.options.dedicated%'
+      - '@datetime.time'
+  # endregion

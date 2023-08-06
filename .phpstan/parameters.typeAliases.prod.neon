@@ -1,0 +1,16 @@
+parameters:
+	typeAliases:
+		drupal-arangodb-main-factory-parameters-lazy: '''
+			array{
+				default?: string,
+				mapping_static?: array<string, string>,
+				mapping_pattern?: array<string, string>,
+			}
+		'''
+		drupal-arangodb-main-factory-parameters-final: '''
+			array{
+				default: string,
+				mapping_static: array<string, string>,
+				mapping_pattern: array<string, string>,
+			}
+		'''

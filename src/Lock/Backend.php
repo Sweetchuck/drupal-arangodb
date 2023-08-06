@@ -24,8 +24,6 @@ class Backend extends LockBackendAbstract {
 
   protected int|float $minTimeout = 0.001;
 
-  protected SchemaManagerInterface $schemaManager;
-
   protected array $options;
 
   protected DocumentConverterInterface $documentConverter;
@@ -118,7 +116,8 @@ class Backend extends LockBackendAbstract {
     $this->locks[$name]->set('expire', $expire);
     try {
       return $this->dbDocumentHandler->update($this->locks[$name]);
-    } catch (\Exception) {
+    }
+    catch (\Exception) {
       return FALSE;
     }
   }

@@ -23,8 +23,6 @@ class Backend implements FloodInterface {
   protected RequestStack $requestStack;
   protected TimeInterface $time;
 
-  protected SchemaManager $schemaManager;
-
   protected DocumentConverterInterface $documentConverter;
 
   protected array $options;
@@ -86,7 +84,7 @@ class Backend implements FloodInterface {
    *   Unique identifier of the current user.
    *
    * @throws \ArangoDBClient\Exception
-   * @throw \ArangoDBClient\ServerException
+   * @throws \ArangoDBClient\ServerException
    */
   protected function doInsert(string $name, int $window, string $identifier) {
     $document = $this->documentConverter->eventToDocument($name, $window, $identifier);
@@ -134,7 +132,8 @@ class Backend implements FloodInterface {
 
     try {
       $statement->execute();
-    } catch (ServerException $e) {
+    }
+    catch (ServerException $e) {
       if ($e->getServerCode() !== Utils::SERVER_CODE_COLLECTION_NOT_EXISTS) {
         throw $e;
       }
@@ -236,4 +235,5 @@ class Backend implements FloodInterface {
       throw $e;
     }
   }
+
 }

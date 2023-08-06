@@ -4,8 +4,6 @@ declare(strict_types = 1);
 
 namespace Drupal\arangodb\Lock;
 
-use ArangoDBClient\Document;
-
 interface DocumentConverterInterface {
 
   public function getDocumentClass(): string;

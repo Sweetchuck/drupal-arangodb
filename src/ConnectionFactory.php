@@ -77,5 +77,4 @@ class ConnectionFactory implements ConnectionFactoryInterface {
     return array_combine($names, $names);
   }
 
-
 }

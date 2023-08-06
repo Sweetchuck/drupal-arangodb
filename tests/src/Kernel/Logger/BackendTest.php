@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace Drupal\Tests\arangodb\Kernel\Logger;
 
 use ArangoDBClient\Document;
@@ -13,7 +12,6 @@ use Drupal\arangodb\Logger\SchemaManager;
 use Drupal\Core\Logger\LogMessageParser;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\arangodb\Traits\ConnectionTrait;
-use Exception;
 use Sweetchuck\CacheBackend\ArangoDb\Serializer\JsonSerializer;
 
 /**
@@ -108,7 +106,7 @@ class BackendTest extends KernelTestBase {
   /**
    * @dataProvider casesLog
    *
-   * @throws Exception
+   * @throws \Exception
    */
   public function testLog(array $expected, mixed $level, string|\Stringable $message, array $context = []): void {
     $logger = $this->createLoggerBackend();

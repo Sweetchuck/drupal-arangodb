@@ -4,10 +4,10 @@ declare(strict_types = 1);
 
 namespace Drupal\Tests\arangodb\Unit;
 
-use Drupal\arangodb\Utils;
-use Drupal\Tests\UnitTestCase;
 use ArangoDBClient\Connection as ArangoDbConnection;
 use Drupal\arangodb\Cache\Backend as ArangoDbCacheBackend;
+use Drupal\arangodb\Utils;
+use Drupal\Tests\UnitTestCase;
 use Sweetchuck\CacheBackend\ArangoDb\CacheItemPool;
 
 /**

@@ -10,6 +10,7 @@ use ArangoDBClient\Connection;
 use ArangoDBClient\ConnectionOptions;
 use ArangoDBClient\DocumentHandler;
 use ArangoDBClient\UpdatePolicy;
+use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
 
 /**
  * @todo Move this into sweetchuck/cache-backend-arangodb.
@@ -25,6 +26,8 @@ trait ConnectionTrait {
   protected ?CollectionHandler $dbCollectionHandler = NULL;
 
   protected ?DocumentHandler $dbDocumentHandler = NULL;
+
+  protected ?string $dbCollectionName = NULL;
 
   protected string $dbUri = '';
 
@@ -93,6 +96,18 @@ trait ConnectionTrait {
     return $this;
   }
 
+  protected SchemaManagerInterface $schemaManager;
+
+  public function getSchemaManager(): SchemaManagerInterface {
+    return $this->schemaManager;
+  }
+
+  public function setSchemaManager(SchemaManagerInterface $schemaManager): static {
+    $this->schemaManager = $schemaManager;
+
+    return $this;
+  }
+
   /**
    * @throws \ArangoDBClient\Exception
    */
@@ -116,9 +131,14 @@ trait ConnectionTrait {
     return $this;
   }
 
+  /**
+   * @throws \ArangoDBClient\Exception
+   */
   protected function initDbCollection(string $collectionName): static {
     if (!$this->dbCollection) {
-      $this->dbCollection = $this->schemaManager->createCollection($this->dbCollectionHandler, $collectionName);
+      $this->dbCollection = $this
+        ->getSchemaManager()
+        ->createCollection($this->dbCollectionHandler, $collectionName);
     }
 
     return $this;
@@ -157,10 +177,14 @@ trait ConnectionTrait {
   }
 
   public function getDbCollectionName(): string {
-    return strtr(
-      $this->getDbCollectionNamePattern(),
-      $this->getDbCollectionNamePlaceholderValues(),
-    );
+    if ($this->dbCollectionName === NULL) {
+      $this->dbCollectionName = strtr(
+        $this->getDbCollectionNamePattern(),
+        $this->getDbCollectionNamePlaceholderValues(),
+      );
+    }
+
+    return $this->dbCollectionName;
   }
 
   protected function initDbUri(): static {

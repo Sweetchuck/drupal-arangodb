@@ -7,9 +7,7 @@ namespace Drupal\arangodb\Commands;
 use ArangoDBClient\CollectionHandler;
 use ArangoDBClient\Document;
 use ArangoDBClient\DocumentHandler;
-use ArangoDBClient\Exception;
 use ArangoDBClient\ServerException;
-use ArangoDBClient\Statement;
 use Consolidation\AnnotatedCommand\CommandResult;
 use Drupal\arangodb\ConnectionFactoryInterface;
 use Drush\Commands\DrushCommands;
@@ -146,7 +144,8 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
           'createCollection' => TRUE,
         ],
       );
-    } catch (ServerException $e) {
+    }
+    catch (ServerException $e) {
       var_dump($e->getCode());
       var_dump($e->getServerCode());
 
