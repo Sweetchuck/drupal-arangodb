@@ -1,0 +1,15 @@
+parameters:
+	fileExtensions:
+		- php
+		- inc
+		- install
+		- profile
+		- module
+		- theme
+		- engine
+	paths:
+#		- ../Commands/
+		- ../src/
+		- ../arangodb.install
+#		- ../arangodb.module
+		- ../tests/src/
