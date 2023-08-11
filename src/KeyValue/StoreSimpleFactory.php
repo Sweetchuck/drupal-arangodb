@@ -11,6 +11,7 @@ use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
 
 class StoreSimpleFactory implements KeyValueFactoryInterface {
 
+  protected string $type = 'simple';
 
   protected ConnectionFactoryInterface $connectionFactory;
 
@@ -50,18 +51,30 @@ class StoreSimpleFactory implements KeyValueFactoryInterface {
     return $this;
   }
 
+  /**
+   * @phpstan-var drupal-arangodb-keyvalue-store-options
+   */
   protected array $options = [];
 
+  /**
+   * @phpstan-return drupal-arangodb-keyvalue-store-options
+   */
   public function getOptions(): array {
     return $this->options;
   }
 
+  /**
+   * @phpstan-param drupal-arangodb-keyvalue-store-options $options
+   */
   public function setOptions(array $options): static {
     $this->options = $options;
 
     return $this;
   }
 
+  /**
+   * @phpstan-param drupal-arangodb-keyvalue-store-options $options
+   */
   public function __construct(
     ConnectionFactoryInterface $connectionFactory,
     string $connectionName,
@@ -78,10 +91,16 @@ class StoreSimpleFactory implements KeyValueFactoryInterface {
       ->setOptions($options);
   }
 
+  /**
+   * @phpstan-return drupal-arangodb-keyvalue-store-options
+   */
   public function getDefaultOptions(): array {
     return [];
   }
 
+  /**
+   * @phpstan-return drupal-arangodb-keyvalue-store-options
+   */
   public function getFinalOptions(): array {
     return array_replace_recursive(
       $this->getDefaultOptions(),
@@ -97,7 +116,7 @@ class StoreSimpleFactory implements KeyValueFactoryInterface {
 
     $storage = new Store($collection);
     $storage
-      ->setDbCollectionNamePattern($options['collection_name_pattern'])
+      ->setDbCollectionNamePattern($options['collection_name_pattern'] ?? "keyvalue_{$this->type}")
       ->setDbConnection($this->getConnectionFactory()->get($this->connectionName))
       ->setSchemaManager($this->getSchemaManager())
       ->setDocumentConverter($this->getDocumentConverter());

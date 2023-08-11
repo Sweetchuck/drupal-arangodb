@@ -12,6 +12,8 @@ use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
 
 class StoreExpirableFactory extends StoreSimpleFactory implements KeyValueExpirableFactoryInterface {
 
+  protected string $type = 'expirable';
+
   protected ?TimeInterface $time = NULL;
 
   public function getTime(): ?TimeInterface {

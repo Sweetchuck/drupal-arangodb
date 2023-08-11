@@ -17,7 +17,7 @@ use Sweetchuck\CacheBackend\ArangoDb\SchemaManagerInterface;
  */
 trait ConnectionTrait {
 
-  protected ConnectionFactory $dbConnectionFactory;
+  protected ConnectionFactoryInterface $dbConnectionFactory;
 
   protected string $dbConnectionName = 'default';
 
@@ -170,7 +170,7 @@ trait ConnectionTrait {
   }
 
   /**
-   * @return array<string, string>
+   * @phpstan-return array<string, string>
    */
   public function getDbCollectionNamePlaceholderValues(): array {
     return [];

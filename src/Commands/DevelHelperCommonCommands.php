@@ -32,6 +32,8 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
    * @param string $prefix
    *   Example values: "cache_", "queue_core_", "queue_advanced_", "test_".
    *
+   * @phpstan-param array<string, mixed> $options
+   *
    * @command arangodb:collection:list
    *
    * @option string $format
@@ -78,6 +80,8 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
    * @param string $prefix
    *   Example values: "cache_", "queue_core_", "queue_advanced_", "test_".
    *
+   * @phpstan-param array<string, mixed> $options
+   *
    * @command arangodb:collection:delete
    *
    * @option string $connection-name
@@ -117,6 +121,8 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
 
   /**
    * Create a new collection by insert.
+   *
+   * @phpstan-param array<string, mixed> $options
    *
    * @command arangodb:collection:create-by-insert
    *
@@ -158,6 +164,8 @@ class DevelHelperCommonCommands extends DrushCommands implements BuilderAwareInt
   }
 
   /**
+   * @phpstan-return array<string>
+   *
    * @throws \ArangoDBClient\Exception
    * @throws \ArangoDBClient\ClientException
    */

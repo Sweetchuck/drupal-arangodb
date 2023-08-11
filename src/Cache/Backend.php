@@ -34,6 +34,10 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string> $cids
+   *
+   * @phpstan-return array<string, mixed>
    */
   public function getMultiple(&$cids, $allow_invalid = FALSE) {
     $items = $this->pool->getItems($cids, $allow_invalid);
@@ -53,6 +57,10 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string> $tags
+   *
+   * @phpstan-return void
    */
   public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = []) {
     $this->setMultiple([
@@ -66,6 +74,10 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string, drupal-arangodb-cache-array-lazy> $items
+   *
+   * @return void
    */
   public function setMultiple(array $items) {
     foreach ($items as $key => $array) {
@@ -75,6 +87,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
   }
 
   /**
+   * @phpstan-return drupal-arangodb-cache-array-final
+   *
    * @link https://www.arangodb.com/docs/stable/indexing-index-basics.html#ttl-time-to-live-index
    */
   protected function cacheItemToCacheArray(CacheItem $item): array {
@@ -89,6 +103,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
   }
 
   /**
+   * @phpstan-param drupal-arangodb-cache-array-lazy $array
+   *
    * @link https://www.arangodb.com/docs/stable/indexing-index-basics.html#ttl-time-to-live-index
    */
   protected function cacheArrayToCacheItem(string $key, array $array): CacheItem {
@@ -117,6 +133,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    */
   public function delete($cid) {
     $this->pool->delete($cid);
@@ -124,6 +142,10 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string> $cids
+   *
+   * @return void
    */
   public function deleteMultiple(array $cids) {
     $this->pool->deleteMultiple($cids);
@@ -131,6 +153,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    */
   public function deleteAll() {
     $this->pool->clear();
@@ -138,6 +162,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    */
   public function invalidate($cid) {
     $this->invalidateMultiple([$cid]);
@@ -145,6 +171,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    */
   public function invalidateMultiple(array $cids) {
     $this->pool->invalidateMultiple($cids);
@@ -152,6 +180,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    */
   public function invalidateAll() {
     $this->pool->invalidateAll();
@@ -159,6 +189,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    */
   public function garbageCollection() {
     $this->pool->garbageCollection();
@@ -166,6 +198,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    */
   public function removeBin() {
     $this->pool->removeBin();
@@ -173,6 +207,8 @@ class Backend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    */
   public function invalidateTags(array $tags) {
     $this->pool->invalidateTags($tags);

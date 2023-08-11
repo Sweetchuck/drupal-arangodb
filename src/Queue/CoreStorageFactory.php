@@ -33,13 +33,13 @@ class CoreStorageFactory {
     return $this;
   }
 
-  protected CoreDocumentConverter $documentConverter;
+  protected CoreDocumentConverterInterface $documentConverter;
 
-  public function getDocumentConverter(): CoreDocumentConverter {
+  public function getDocumentConverter(): CoreDocumentConverterInterface {
     return $this->documentConverter;
   }
 
-  public function setDocumentConverter(CoreDocumentConverter $documentConverter): static {
+  public function setDocumentConverter(CoreDocumentConverterInterface $documentConverter): static {
     $this->documentConverter = $documentConverter;
 
     return $this;
@@ -81,22 +81,39 @@ class CoreStorageFactory {
     return $this;
   }
 
+  /**
+   * @phpstan-var drupal-arangodb-queue-options-lazy
+   */
   protected array $options = [];
 
+  /**
+   * @phpstan-return drupal-arangodb-queue-options-lazy
+   */
   public function getOptions(): array {
     return $this->options;
   }
 
+  /**
+   * @phpstan-param drupal-arangodb-queue-options-lazy $options
+   */
   public function setOptions(array $options): static {
     $this->options = $options;
 
     return $this;
   }
 
+  /**
+   * @phpstan-return drupal-arangodb-queue-options-lazy
+   */
   public function getDefaultOptions(): array {
-    return [];
+    return [
+      'collection_name_pattern' => 'queue_core_shared',
+    ];
   }
 
+  /**
+   * @phpstan-return drupal-arangodb-queue-options-final
+   */
   public function getFinalOptions(): array {
     return array_replace_recursive(
       $this->getDefaultOptions(),
@@ -104,6 +121,9 @@ class CoreStorageFactory {
     );
   }
 
+  /**
+   * @phpstan-param drupal-arangodb-queue-options-lazy $options
+   */
   public function __construct(
     ConnectionFactoryInterface $connectionFactory,
     string $connectionName,

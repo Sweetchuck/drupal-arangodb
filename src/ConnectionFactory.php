@@ -14,10 +14,17 @@ class ConnectionFactory implements ConnectionFactoryInterface {
    */
   protected \ArrayAccess $connections;
 
+  /**
+   * @phpstan-var array<string, array<string, mixed>>
+   */
   protected array $connectionOptionsFromParameters = [];
 
   protected Settings $settings;
 
+  /**
+   * @phpstan-param \ArrayAccess<string, \ArangoDBClient\Connection> $connections
+   * @phpstan-param array<string, array<string, mixed>> $connectionOptions
+   */
   public function __construct(
     \ArrayAccess $connections,
     array $connectionOptions,
@@ -28,6 +35,9 @@ class ConnectionFactory implements ConnectionFactoryInterface {
     $this->settings = $settings;
   }
 
+  /**
+   * @phpstan-return array<string, mixed>
+   */
   public function getFinalConnectionOptions(string $name): array {
     // @todo Validate. One of the $connectionOptionsFromSettings or
     // $this->connectionOptionsFromParameters should contain the key.
@@ -71,6 +81,7 @@ class ConnectionFactory implements ConnectionFactoryInterface {
   public function getConnectionNames(): array {
     $set1 = array_keys($this->settings->get('arangodb.connection_options', []));
     $set2 = array_keys($this->connectionOptionsFromParameters);
+    /** @var string[] $names */
     $names = array_unique(array_merge($set1, $set2));
     sort($names);
 

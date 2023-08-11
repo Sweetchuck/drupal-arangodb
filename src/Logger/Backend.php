@@ -19,8 +19,14 @@ class Backend implements LoggerInterface {
 
   protected DocumentConverterInterface $documentConverter;
 
+  /**
+   * @phpstan-var drupal-arangodb-logger-options
+   */
   protected array $options;
 
+  /**
+   * @phpstan-param drupal-arangodb-logger-options $options
+   */
   public function __construct(
     ConnectionFactory $connectionFactory,
     string $connectionName,
@@ -37,6 +43,9 @@ class Backend implements LoggerInterface {
     $this->dbCollectionNamePattern = $options['collectionNamePattern'] ?? 'log';
   }
 
+  /**
+   * @phpstan-return array<string, string>
+   */
   public function getDbCollectionNamePlaceholderValues(string $channel = 'unknown'): array {
     return [
       '{{ channel }}' => $channel,

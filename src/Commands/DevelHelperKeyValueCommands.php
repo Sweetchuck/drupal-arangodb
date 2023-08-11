@@ -36,6 +36,8 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
    * @param string $key
    *   Key.
    *
+   * @phpstan-param array<string, mixed> $options
+   *
    * @command arangodb:keyvalue:simple:has
    *
    * @bootstrap full
@@ -67,6 +69,8 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
    * @param string $key
    *   Key.
    *
+   * @phpstan-param array<string, mixed> $options
+   *
    * @command arangodb:keyvalue:simple:get
    *
    * @bootstrap full
@@ -96,6 +100,8 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
    * @param string[] $keys
    *   Keys.
    *
+   * @phpstan-param array<string, mixed> $options
+   *
    * @command arangodb:keyvalue:simple:get-multiple
    *
    * @bootstrap full
@@ -122,6 +128,8 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
    *
    * @param string $collection
    *   Collection.
+   *
+   * @phpstan-param array<string, mixed> $options
    *
    * @command arangodb:keyvalue:simple:get-all
    *
@@ -163,7 +171,7 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
     string $collection,
     string $key,
     string $type = 'array',
-  ) {
+  ): void {
     $this
       ->keyValueFactorySimple
       ->get($collection)
@@ -193,7 +201,7 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
     string $key,
     string $type = 'array',
     string $ttl = '120',
-  ) {
+  ): void {
     $this
       ->keyValueFactoryExpirable
       ->get($collection)
@@ -226,20 +234,7 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
       ->get($collection);
     $data = [
       'value_before' => $keyValueStorage->get($key),
-      'value_attempt' => match($type) {
-        'bool' => TRUE,
-        'int' => (int) date('s'),
-        'float' => ((int) date('s') + 1) / 142,
-        'string' => date('Y-m-d H:i:s'),
-        'array' => [
-          'now' => date('Y-m-d H:i:s'),
-          'foo' => 'bar',
-        ],
-        'object' => (object) [
-          'now' => date('Y-m-d H:i:s'),
-          'foo' => 'bar',
-        ],
-      },
+      'value_attempt' => $this->getValueByType($type),
     ];
 
     $data['setIfNotExists.return'] = $keyValueStorage->setIfNotExists($key, $data['value_attempt']);
@@ -256,7 +251,7 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
    *   Collection.
    * @param string $keyPrefix
    *   Key prefix.
-   * @param array $types
+   * @param string[] $types
    *   Value types.
    *
    * @command arangodb:keyvalue:simple:set-multiple
@@ -309,7 +304,7 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
   public function cmdKeyValueSimpleDeleteExecute(
     string $collection,
     string $key,
-  ) {
+  ): void {
     $keyValueStore = $this->keyValueFactorySimple->get($collection);
 
     $keyValueStore->delete($key);
@@ -320,7 +315,7 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
    *
    * @param string $collection
    *   Collection.
-   * @param array $keys
+   * @param string[] $keys
    *   Keys.
    *
    * @command arangodb:keyvalue:simple:delete-multiple
@@ -356,7 +351,7 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
    *
    * @hidden
    */
-  public function cmdKeyValueSimpleDeleteAllExecute(string $collection) {
+  public function cmdKeyValueSimpleDeleteAllExecute(string $collection): void {
     $keyValueStore = $this->keyValueFactorySimple->get($collection);
 
     $keyValueStore->deleteAll();
@@ -371,6 +366,8 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
    *   Key.
    * @param string $newKey
    *   Key.
+   *
+   * @phpstan-param array<string, mixed> $options
    *
    * @command arangodb:keyvalue:simple:rename
    *
@@ -415,11 +412,11 @@ class DevelHelperKeyValueCommands extends DrushCommands implements BuilderAwareI
       'int' => (int) date('s'),
       'float' => ((int) date('s') + 1) / 142,
       'string' => date('Y-m-d H:i:s'),
-      'array' => [
+      'object' => (object) [
         'now' => date('Y-m-d H:i:s'),
         'foo' => 'bar',
       ],
-      'object' => (object) [
+      default => [
         'now' => date('Y-m-d H:i:s'),
         'foo' => 'bar',
       ],

@@ -72,6 +72,9 @@ class UtilsTest extends UnitTestCase {
     static::assertSame($expected, $actual);
   }
 
+  /**
+   * @phpstan-return array<string, mixed>
+   */
   public function casesConnectionUri(): array {
     $expected = 'tcp://me@1.2.3.4:5678/my_database_01';
     $values = [
@@ -111,8 +114,10 @@ class UtilsTest extends UnitTestCase {
 
   /**
    * @dataProvider casesConnectionUri
+   *
+   * @phpstan-param drupal-arangodb-connection-uri-options $options
    */
-  public function testConnectionUri(string $expected, $options) {
+  public function testConnectionUri(string $expected, array|\ArrayAccess $options): void {
     static::assertEquals($expected, Utils::connectionUri($options));
   }
 

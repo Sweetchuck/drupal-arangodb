@@ -21,6 +21,11 @@ class BackendTest extends KernelTestBase {
 
   protected Backend $lock;
 
+  /**
+   * {@inheritdoc}
+   *
+   * @phpstan-var array<string>
+   */
   protected static $modules = [
     'arangodb',
   ];
@@ -109,7 +114,7 @@ class BackendTest extends KernelTestBase {
    *
    * @throws \ArangoDBClient\Exception
    */
-  public function testBackendLockReleaseAll() {
+  public function testBackendLockReleaseAll(): void {
     static::assertTrue(
       $this->lock->acquire('lock_a'),
       'Could acquire first lock.',

@@ -9,7 +9,6 @@ use Drupal\arangodb\KeyValue\DocumentConverter;
 use Drupal\arangodb\KeyValue\SchemaManager;
 use Drupal\arangodb\KeyValue\Store;
 use Drupal\arangodb\KeyValue\StoreExpirableFactory;
-use Drupal\Component\Datetime\TimeInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\arangodb\Traits\ConnectionTrait;
 use Drupal\Tests\arangodb\Traits\TestTime;
@@ -28,13 +27,15 @@ class StoreTest extends KernelTestBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-var array<string>
    */
   protected static $modules = [
     'system',
     'arangodb',
   ];
 
-  protected TimeInterface $time;
+  protected TestTime $time;
 
   /**
    * {@inheritdoc}
@@ -57,6 +58,8 @@ class StoreTest extends KernelTestBase {
   }
 
   /**
+   * @phpstan-param array<string, mixed> $options
+   *
    * @throws \Exception
    */
   protected function createKeyValueStore(string $collection, array $options = []): Store {
@@ -234,6 +237,8 @@ class StoreTest extends KernelTestBase {
   }
 
   /**
+   * @phpstan-return array<array-key, array<string, mixed>>
+   *
    * @throws \ArangoDBClient\Exception
    */
   protected function getRows(Store $storage): array {

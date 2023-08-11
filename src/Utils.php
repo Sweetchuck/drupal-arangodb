@@ -6,12 +6,17 @@ namespace Drupal\arangodb;
 
 use ArangoDBClient\ConnectionOptions as ArangoDbConnectionOptions;
 use Drupal\arangodb\Cache\Backend as ArangoDbCacheBackend;
+use Sweetchuck\Utils\Uri;
 
 class Utils {
 
-  const SERVER_CODE_COLLECTION_NOT_EXISTS = 1203;
+  public const SERVER_CODE_COLLECTION_NOT_EXISTS = 1203;
 
   /**
+   * @phpstan-param iterable<int|string, mixed> $bins
+   *
+   * @phpstan-return array<int, drupal-arangodb-connection-with-cache-bins>
+   *
    * @see \Drupal\Core\Cache\Cache::getBins()
    */
   public static function groupCacheBinsByConnections(iterable $bins): array {
@@ -41,7 +46,7 @@ class Utils {
   }
 
   /**
-   * @param array|\ArrayAccess $options
+   * @phpstan-param drupal-arangodb-connection-uri-options $options
    */
   public static function connectionUri($options): string {
     if (!empty($options[ArangoDbConnectionOptions::OPTION_ENDPOINT])
@@ -53,20 +58,11 @@ class Utils {
       $endpoint = $options[ArangoDbConnectionOptions::OPTION_ENDPOINT] ?? 'tcp://127.0.0.1:8529';
     }
 
-    $uriParts = parse_url($endpoint);
+    $uriParts = parse_url($endpoint) ?: [];
     $uriParts['user'] = $options[ArangoDbConnectionOptions::OPTION_AUTH_USER] ?? '';
     $uriParts['path'] = $options[ArangoDbConnectionOptions::OPTION_DATABASE] ?? '';
 
-    // @todo This is just a POC.
-    // @todo Use \Sweetchuck\Utils\Uri::build().
-    return sprintf(
-      '%s://%s@%s:%s/%s',
-      $uriParts['scheme'],
-      $uriParts['user'],
-      $uriParts['host'],
-      $uriParts['port'],
-      $uriParts['path'],
-    );
+    return Uri::build($uriParts);
   }
 
 }

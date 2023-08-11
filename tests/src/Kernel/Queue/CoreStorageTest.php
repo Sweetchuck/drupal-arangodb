@@ -20,6 +20,8 @@ class CoreStorageTest extends KernelTestBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-var array<string>
    */
   protected static $modules = [
     'arangodb',
@@ -145,8 +147,11 @@ class CoreStorageTest extends KernelTestBase {
 
   /**
    * Returns the number of equal items in two arrays.
+   *
+   * @phpstan-param array<mixed> $items
+   * @phpstan-param array<mixed> $new_items
    */
-  protected function queueScore($items, $new_items): int {
+  protected function queueScore(iterable $items, iterable $new_items): int {
     $score = 0;
     foreach ($items as $item) {
       foreach ($new_items as $new_item) {

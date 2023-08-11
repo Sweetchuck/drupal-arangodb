@@ -47,6 +47,8 @@ class DevelHelperLockCommands extends DrushCommands implements BuilderAwareInter
    * @param string $sleep
    *   Integer in seconds.
    *
+   * @phpstan-param array<string, mixed> $options
+   *
    * @command arangodb:lock-request:acquire
    *
    * @bootstrap full
@@ -83,6 +85,8 @@ class DevelHelperLockCommands extends DrushCommands implements BuilderAwareInter
    * @param string $sleep
    *   Integer in seconds.
    *
+   * @phpstan-param array<string, mixed> $options
+   *
    * @command arangodb:lock-persistent:acquire
    *
    * @bootstrap full
@@ -114,6 +118,8 @@ class DevelHelperLockCommands extends DrushCommands implements BuilderAwareInter
 
   /**
    * List all the locks.
+   *
+   * @phpstan-param array<string, mixed> $options
    *
    * @command arangodb:lock:list
    *

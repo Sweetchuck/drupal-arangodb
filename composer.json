@@ -16,6 +16,7 @@
     },
     "require": {
         "php": ">=8.1",
+        "ext-mbstring": "*",
         "sweetchuck/cache-backend-arangodb": "1.x-dev",
         "sweetchuck/utils": "^1.0"
     },

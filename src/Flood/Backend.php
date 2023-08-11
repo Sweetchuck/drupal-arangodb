@@ -25,8 +25,14 @@ class Backend implements FloodInterface {
 
   protected DocumentConverterInterface $documentConverter;
 
+  /**
+   * @phpstan-var drupal-arangodb-flood-options $options
+   */
   protected array $options;
 
+  /**
+   * @phpstan-param drupal-arangodb-flood-options $options
+   */
   public function __construct(
     ConnectionFactory $connectionFactory,
     string $connectionName,
@@ -48,6 +54,8 @@ class Backend implements FloodInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -86,7 +94,7 @@ class Backend implements FloodInterface {
    * @throws \ArangoDBClient\Exception
    * @throws \ArangoDBClient\ServerException
    */
-  protected function doInsert(string $name, int $window, string $identifier) {
+  protected function doInsert(string $name, int $window, string $identifier): void {
     $document = $this->documentConverter->eventToDocument($name, $window, $identifier);
     $this->dbDocumentHandler->insert(
       $this->getDbCollectionName(),
@@ -99,6 +107,8 @@ class Backend implements FloodInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -157,6 +167,8 @@ class Backend implements FloodInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */

@@ -87,6 +87,11 @@ class CoreStorage implements
       ->setQueueName($queueName);
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @phpstan-return array<string, string>
+   */
   public function getDbCollectionNamePlaceholderValues(): array {
     return [
       '{{ queue.name }}' => $this->getQueueName(),
@@ -95,6 +100,8 @@ class CoreStorage implements
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param mixed $data
    *
    * @throws \Exception
    *   When the item can not be created.
@@ -153,11 +160,15 @@ class CoreStorage implements
       ],
     );
 
-    return $result->current();
+    return (int) $result->current();
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @param int $lease_time
+   *
+   * @phpstan-return false|drupal-core-queue-item
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -200,7 +211,7 @@ class CoreStorage implements
         return FALSE;
       }
 
-      /** @var \ArangoDBClient\Document $document */
+      /** @var null|\ArangoDBClient\Document $document */
       $document = $result->current();
       if (!$document) {
         return FALSE;
@@ -231,6 +242,10 @@ class CoreStorage implements
   /**
    * {@inheritdoc}
    *
+   * @phpstan-param drupal-core-queue-item $item
+   *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function deleteItem($item) {
@@ -255,6 +270,8 @@ class CoreStorage implements
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param drupal-core-queue-item $item
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -283,10 +300,14 @@ class CoreStorage implements
     catch (ArangoDBException $e) {
       // @todo Error log.
     }
+
+    return TRUE;
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -298,6 +319,8 @@ class CoreStorage implements
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -327,6 +350,8 @@ class CoreStorage implements
   /**
    * {@inheritdoc}
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function garbageCollection() {
@@ -348,6 +373,8 @@ class CoreStorage implements
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param drupal-core-queue-item $item
    *
    * @throws \ArangoDBClient\Exception
    */

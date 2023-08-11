@@ -34,7 +34,7 @@ class DevelHelperQueueCoreCommands extends DrushCommands implements BuilderAware
    *
    * @hidden
    */
-  public function cmdCreateQueueExecute(string $queueName) {
+  public function cmdCreateQueueExecute(string $queueName): void {
     $this
       ->getQueueHandler($queueName)
       ->createQueue();
@@ -45,6 +45,8 @@ class DevelHelperQueueCoreCommands extends DrushCommands implements BuilderAware
    *
    * @param string $queueName
    *   The name of the queue.
+   *
+   * @phpstan-param array<string, mixed> $options
    *
    * @command arangodb:queue-core:number-of-items
    *
@@ -74,6 +76,8 @@ class DevelHelperQueueCoreCommands extends DrushCommands implements BuilderAware
    *
    * @param string $queueName
    *   The name of the queue.
+   *
+   * @phpstan-param array<string, mixed> $options
    *
    * @command arangodb:queue-core:claim-item
    *
@@ -115,7 +119,7 @@ class DevelHelperQueueCoreCommands extends DrushCommands implements BuilderAware
   public function cmdReleaseItemExecute(
     string $queueName,
     string $itemId,
-  ) {
+  ): void {
     $item = (object) [
       'item_id' => $itemId,
     ];
@@ -136,7 +140,7 @@ class DevelHelperQueueCoreCommands extends DrushCommands implements BuilderAware
    *
    * @hidden
    */
-  public function cmdDeleteQueueExecute(string $queueName) {
+  public function cmdDeleteQueueExecute(string $queueName): void {
     $this
       ->getQueueHandler($queueName)
       ->deleteQueue();
@@ -159,7 +163,7 @@ class DevelHelperQueueCoreCommands extends DrushCommands implements BuilderAware
   public function cmdCreateItemExecute(
     string $queueName,
     string $data = '',
-  ) {
+  ): void {
     if ($data === '') {
       $data = date('Y-m-d H:i:s');
     }
@@ -187,7 +191,7 @@ class DevelHelperQueueCoreCommands extends DrushCommands implements BuilderAware
   public function cmdDeleteItemExecute(
     string $queueName,
     string $itemId = '',
-  ) {
+  ): void {
     $item = (object) ['item_id' => $itemId];
     $this
       ->getQueueHandler($queueName)

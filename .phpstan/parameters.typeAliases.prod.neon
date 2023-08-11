@@ -1,13 +1,186 @@
 parameters:
 	typeAliases:
-		drupal-arangodb-main-factory-parameters-lazy: '''
+		# region drupal-core
+		drupal-core-requirements-phase: '''
+			"install"|"update"|"runtime"
+		'''
+		drupal-core-requirement: '''
+			array{
+				severity: int<0, 2>,
+				title: string|\Stringable,
+				value: string|\Stringable,
+				description: string|\Stringable|array<string, mixed>,
+			}
+		'''
+		drupal-core-queue-item: '''
+			object{
+				item_id: null|int|string,
+				data: mixed,
+			}
+		'''
+		# endregion
+
+		# region drupal-advancedqueue
+		drupal-advancedqueue-job-state: '''
+			"queued"|"processing"|"success"|"failure"
+		'''
+		drupal-advancedqueue-job-definition-lazy: '''
+			array{
+				type: string,
+				state: drupal-advancedqueue-job-state,
+				payload: mixed,
+				id?: int|string,
+				queue_id?: string,
+				message?: string,
+				num_retries?: int,
+				available?: bool|0|1,
+				processed?: int,
+				expires?: int,
+			}
+		'''
+		drupal-advancedqueue-job-definition-final: '''
+			array{
+				type: string,
+				state: drupal-advancedqueue-job-state,
+				payload: mixed,
+				id: int|string,
+				queue_id: string,
+				message: string,
+				num_retries: int,
+				available: bool|0|1,
+				processed: int,
+				expires: int,
+			}
+		'''
+		drupal-advancedqueue-count-jobs-report: '''
+			array{
+				queued: int,
+				processing?: int,
+				success?: int,
+				failed?: int,
+			}
+		'''
+		# endregion
+
+		drupal-arangodb-connection-uri-options: '''
+			array<string, mixed>|\ArrayAccess<string, mixed>
+		'''
+		drupal-arangodb-connection-with-cache-bins: '''
+			array{
+				connection: \ArangoDBClient\Connection,
+				binNames: array<string, string>,
+			}
+		'''
+
+		# region drupal-arangodb-cache
+		drupal-arangodb-cache-backend-options: '''
+			array{
+				collection_name_pattern: string,
+			}
+		'''
+		drupal-arangodb-cache-array-lazy: '''
+			array{
+				data: mixed,
+				tags: array<string>,
+				expire: null|int|float,
+				created?: null|int|float,
+			}
+		'''
+		drupal-arangodb-cache-array-final: '''
+			array{
+				cid: string,
+				data: mixed,
+				tags: array<string>,
+				expire: null|int|float,
+				created: null|int|float,
+				valid: bool,
+			}
+		'''
+		# endregion
+
+		# region drupal-arangodb-flood
+		drupal-arangodb-flood-options: '''
+			array{
+				collectionNamePattern?: string,
+			}
+		'''
+		# endregion
+
+		# region drupal-arangodb-keyvalue
+		drupal-arangodb-keyvalue-store-options: '''
+			array{
+				collection_name_pattern?: string,
+			}
+		'''
+		drupal-arangodb-keyvalue-entry: '''
+			array{
+				key: string,
+				value: mixed,
+				expire?: int,
+			}
+		'''
+		# endregion
+
+		# region drupal-arangodb-lock
+		drupal-arangodb-lock-options: '''
+			array{
+				collectionNamePattern?: string,
+				minTimeout?: float,
+			}
+		'''
+		# endregion
+
+		# region drupal-arangodb-logger
+		drupal-arangodb-logger-options: '''
+			array{
+				collectionNamePattern?: string,
+			}
+		'''
+		# endregion
+
+		drupal-arangodb-queue-options-lazy: '''
+			array{
+				collection_name_pattern?: string,
+			}
+		'''
+		drupal-arangodb-queue-options-final: '''
+			array{
+				collection_name_pattern: string,
+			}
+		'''
+
+		drupal-arangodb-advancedqueue-config-treshold: '''
+			array{
+				type: string,
+				amount: int,
+				time: int,
+			}
+		'''
+		drupal-arangodb-advancedqueue-config-storage-options: '''
+			array{
+				collection_name_pattern: string,
+			}
+		'''
+		drupal-arangodb-advancedqueue-config: '''
+			array{
+				lease_time: int,
+				connection_name: string,
+				storage_options: drupal-arangodb-advancedqueue-config-storage-options,
+				threshold: array{
+					success: drupal-arangodb-advancedqueue-config-treshold,
+					failure: drupal-arangodb-advancedqueue-config-treshold,
+				}
+			}
+		'''
+
+		drupal-arangodb-keyvalue-main-factory-parameters-lazy: '''
 			array{
 				default?: string,
 				mapping_static?: array<string, string>,
 				mapping_pattern?: array<string, string>,
 			}
 		'''
-		drupal-arangodb-main-factory-parameters-final: '''
+		drupal-arangodb-keyvalue-main-factory-parameters-final: '''
 			array{
 				default: string,
 				mapping_static: array<string, string>,

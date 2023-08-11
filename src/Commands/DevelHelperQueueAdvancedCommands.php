@@ -34,7 +34,7 @@ class DevelHelperQueueAdvancedCommands extends DrushCommands implements BuilderA
    *
    * @hidden
    */
-  public function cmdCreateQueueExecute(string $queueId) {
+  public function cmdCreateQueueExecute(string $queueId): void {
     /** @var \Drupal\advancedqueue\Entity\QueueInterface $queue */
     $queue = $this->queueStorage->load($queueId);
     $queue_backend = $queue->getBackend();
@@ -48,7 +48,7 @@ class DevelHelperQueueAdvancedCommands extends DrushCommands implements BuilderA
    *
    * @hidden
    */
-  public function cmdDeleteQueueExecute(string $queueId) {
+  public function cmdDeleteQueueExecute(string $queueId): void {
     /** @var \Drupal\advancedqueue\Entity\QueueInterface $queue */
     $queue = $this->queueStorage->load($queueId);
     $queue_backend = $queue->getBackend();
@@ -62,7 +62,7 @@ class DevelHelperQueueAdvancedCommands extends DrushCommands implements BuilderA
    *
    * @hidden
    */
-  public function cmdEnqueueJobsExecute(string $queueId) {
+  public function cmdEnqueueJobsExecute(string $queueId): void {
     $jobs = [
       Job::create(
         'flexible',
@@ -92,6 +92,8 @@ class DevelHelperQueueAdvancedCommands extends DrushCommands implements BuilderA
    * @param string $queueId
    *   Queue ID.
    *
+   * @phpstan-param array<string, mixed> $options
+   *
    * @command arangodb:queue-advanced:count-jobs
    *
    * @option string $format
@@ -119,6 +121,8 @@ class DevelHelperQueueAdvancedCommands extends DrushCommands implements BuilderA
    *
    * @param string $queueId
    *   Queue ID.
+   *
+   * @phpstan-param array<string, mixed> $options
    *
    * @command arangodb:queue-advanced:claim-job
    *
@@ -149,7 +153,7 @@ class DevelHelperQueueAdvancedCommands extends DrushCommands implements BuilderA
    *
    * @hidden
    */
-  public function cmdClearExecute(string $queueId) {
+  public function cmdClearExecute(string $queueId): void {
     /** @var \Drupal\advancedqueue\Entity\QueueInterface $queue */
     $queue = $this->queueStorage->load($queueId);
     $queue_backend = $queue->getBackend();

@@ -37,6 +37,9 @@ class AdvancedDocumentConverterTest extends TestCase {
     static::assertSame($time, $dc->getTime());
   }
 
+  /**
+   * @phpstan-return array<string, mixed>
+   */
   public function casesJobToDocument(): array {
     return [
       'basic' => [
@@ -57,7 +60,11 @@ class AdvancedDocumentConverterTest extends TestCase {
   }
 
   /**
+   * @phpstan-param drupal-advancedqueue-job-definition-final $jobDefinition
+   *
    * @dataProvider casesJobToDocument
+   *
+   * @throws \ArangoDBClient\ClientException
    */
   public function testJobToDocument(array $jobDefinition): void {
     $collectionName = 'myCollection01';
@@ -91,6 +98,9 @@ class AdvancedDocumentConverterTest extends TestCase {
     static::assertSame($expected, $actual);
   }
 
+  /**
+   * @phpstan-return array<string, mixed>
+   */
   public function casesDocumentToJob(): array {
     return [
       'basic' => [
@@ -107,9 +117,11 @@ class AdvancedDocumentConverterTest extends TestCase {
   }
 
   /**
-   * @throws \ArangoDBClient\ClientException
+   * @phpstan-param array<string, mixed> $docValues
    *
    * @dataProvider casesDocumentToJob
+   *
+   * @throws \ArangoDBClient\ClientException
    */
   public function testDocumentToJob(array $docValues): void {
     $documentConverter = $this->createDocumentConverter();

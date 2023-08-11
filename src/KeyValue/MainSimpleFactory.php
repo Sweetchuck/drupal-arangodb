@@ -53,7 +53,7 @@ class MainSimpleFactory implements KeyValueFactoryInterface {
   protected ContainerInterface $container;
 
   /**
-   * @phpstan-var drupal-arangodb-main-factory-parameters-final
+   * @phpstan-var drupal-arangodb-keyvalue-main-factory-parameters-final
    *
    * @code
    * # Value: A service id which implements the \Drupal\Core\KeyValueStore\KeyValueFactoryInterface interface.
@@ -73,7 +73,7 @@ class MainSimpleFactory implements KeyValueFactoryInterface {
    *   '/^my_module_01\.baz\.\d+/': 'implementer_c.keyvalue.factory'
    * @endcode
    */
-  protected array $parameters = [];
+  protected array $parameters;
 
   /**
    * @phpstan-var array<string, \Drupal\Core\KeyValueStore\KeyValueStoreInterface>
@@ -81,7 +81,7 @@ class MainSimpleFactory implements KeyValueFactoryInterface {
   protected array $stores = [];
 
   /**
-   * @phpstan-param drupal-arangodb-main-factory-parameters-lazy $parameters
+   * @phpstan-param drupal-arangodb-keyvalue-main-factory-parameters-lazy $parameters
    */
   public function __construct(ContainerInterface $container, array $parameters) {
     $this->container = $container;
@@ -89,7 +89,7 @@ class MainSimpleFactory implements KeyValueFactoryInterface {
   }
 
   /**
-   * @phpstan-param drupal-arangodb-main-factory-parameters-lazy $parameters
+   * @phpstan-param drupal-arangodb-keyvalue-main-factory-parameters-lazy $parameters
    */
   protected function setParameters(array $parameters): static {
     $this->parameters = $parameters
@@ -107,10 +107,11 @@ class MainSimpleFactory implements KeyValueFactoryInterface {
    */
   public function get($collection) {
     if (!isset($this->stores[$collection])) {
-      $this->stores[$collection] = $this
+      /** @var \Drupal\Core\KeyValueStore\KeyValueFactoryInterface $factory */
+      $factory = $this
         ->container
-        ->get($this->getFactoryServiceId($collection))
-        ->get($collection);
+        ->get($this->getFactoryServiceId($collection));
+      $this->stores[$collection] = $factory->get($collection);
     }
 
     return $this->stores[$collection];

@@ -59,6 +59,9 @@ class Arangodb extends BackendBase implements
     return $this->logger;
   }
 
+  /**
+   * @phpstan-param drupal-arangodb-advancedqueue-config $configuration
+   */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $configuration,
@@ -71,6 +74,9 @@ class Arangodb extends BackendBase implements
     );
   }
 
+  /**
+   * @phpstan-param drupal-arangodb-advancedqueue-config $configuration
+   */
   public function __construct(
     array $configuration,
     $plugin_id,
@@ -91,6 +97,9 @@ class Arangodb extends BackendBase implements
     return $this->queueId;
   }
 
+  /**
+   * @phpstan-return array<string, string>
+   */
   public function getDbCollectionNamePlaceholderValues(): array {
     return [
       '{{ queue.name }}' => $this->getQueueName(),
@@ -99,6 +108,10 @@ class Arangodb extends BackendBase implements
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param drupal-arangodb-advancedqueue-config $configuration
+   *
+   * @return void
    */
   public function setConfiguration(array $configuration) {
     parent::setConfiguration($configuration);
@@ -110,6 +123,8 @@ class Arangodb extends BackendBase implements
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-return drupal-arangodb-advancedqueue-config
    */
   public function defaultConfiguration() {
     $values = parent::defaultConfiguration();
@@ -132,9 +147,17 @@ class Arangodb extends BackendBase implements
       ],
     ];
 
+    /** @var drupal-arangodb-advancedqueue-config $values */
     return $values;
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @phpstan-param array<string, mixed> $form
+   *
+   * @phpstan-return array<string, mixed>
+   */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $parents = $form['#parents'];
     $namePrefix = $parents[0];
@@ -276,6 +299,13 @@ class Arangodb extends BackendBase implements
     return $form;
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @phpstan-param array<string, mixed> $form
+   *
+   * @return void
+   */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
     parent::validateConfigurationForm($form, $form_state);
 
@@ -289,20 +319,27 @@ class Arangodb extends BackendBase implements
     try {
       $this->dbConnectionFactory->get($values['connection_name']);
     }
-    catch (\Exception $e) {
+    catch (\Exception $exception) {
       $form_state->setErrorByName(
          "{$element_name_prefix}connection_name",
-        $this->t(
+        (string) $this->t(
           'Connection with name %connection_name could not be established. Error message: @error_message',
           [
             '%connection_name' => $values['connection_name'],
-            '@error_message' => $e->getMessage(),
+            '@error_message' => $exception->getMessage(),
           ],
         ),
       );
     }
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @phpstan-param array<string, mixed> $form
+   *
+   * @return void
+   */
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     parent::submitConfigurationForm($form, $form_state);
 
@@ -316,6 +353,9 @@ class Arangodb extends BackendBase implements
     $this->configuration['threshold'] = $values['threshold'];
   }
 
+  /**
+   * @phpstan-return array<string, string|\Drupal\Core\StringTranslation\TranslatableMarkup>
+   */
   protected function getCleanupTypeOptions(): array {
     return [
       'none' => $this->t('Keep all jobs'),
@@ -327,6 +367,8 @@ class Arangodb extends BackendBase implements
   /**
    * {@inheritdoc}
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function createQueue() {
@@ -337,6 +379,8 @@ class Arangodb extends BackendBase implements
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -362,6 +406,8 @@ class Arangodb extends BackendBase implements
   }
 
   /**
+   * @phpstan-param drupal-arangodb-advancedqueue-config-treshold $threshold
+   *
    * @throws \ArangoDBClient\Exception
    */
   protected function cleanupFinishedJobsByState(string $state, array $threshold): static {
@@ -432,6 +478,8 @@ class Arangodb extends BackendBase implements
   /**
    * {@inheritdoc}
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function deleteQueue() {
@@ -459,6 +507,8 @@ class Arangodb extends BackendBase implements
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-return drupal-advancedqueue-count-jobs-report
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -497,7 +547,9 @@ class Arangodb extends BackendBase implements
 
     /** @var \ArangoDBClient\Document $row */
     foreach ($result as $row) {
-      $values[$row->get('state')] = $row->get('count');
+      /** @var drupal-advancedqueue-job-state $state */
+      $state = (string) $row->get('state');
+      $values[$state] = (int) $row->get('count');
     }
 
     return $values;
@@ -505,6 +557,8 @@ class Arangodb extends BackendBase implements
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -517,6 +571,8 @@ class Arangodb extends BackendBase implements
    *
    * @phpstan-param array<\Drupal\advancedqueue\Job> $jobs
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function enqueueJobs(array $jobs, $delay = 0) {
@@ -527,9 +583,12 @@ class Arangodb extends BackendBase implements
       ->initDbCollection($collectionName);
 
     // @todo Support transactions.
+    // @todo Configurable batch size.
+    $batchSize = 1000;
     $documentConverter = $this->getDocumentConverter();
     /** @var array<\Drupal\advancedqueue\Job> $current_jobs_set */
-    while (($current_jobs_set = array_splice($jobs, 0, 1000))) {
+    $current_jobs_set = array_splice($jobs, 0, $batchSize);
+    while ($current_jobs_set) {
       $documents = [];
       foreach ($current_jobs_set as $job) {
         if ($job->getQueueId() !== $this->queueId) {
@@ -548,11 +607,15 @@ class Arangodb extends BackendBase implements
       foreach ($response as $index => $row) {
         $current_jobs_set[$index]->setId($row['_key']);
       }
+
+      $current_jobs_set = array_splice($jobs, 0, $batchSize);
     }
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -630,7 +693,7 @@ class Arangodb extends BackendBase implements
         return NULL;
       }
 
-      /** @var \ArangoDBClient\Document $document */
+      /** @var null|\ArangoDBClient\Document $document */
       $document = $result->current();
       if (!$document) {
         return NULL;
@@ -665,6 +728,8 @@ class Arangodb extends BackendBase implements
   /**
    * {@inheritdoc}
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function onSuccess(Job $job) {
@@ -682,6 +747,8 @@ class Arangodb extends BackendBase implements
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -701,6 +768,8 @@ class Arangodb extends BackendBase implements
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -781,6 +850,8 @@ class Arangodb extends BackendBase implements
   /**
    * {@inheritdoc}
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function deleteJob($job_id) {
@@ -814,10 +885,14 @@ class Arangodb extends BackendBase implements
       ->initDbCollection($this->getDbCollectionName());
 
     try {
-      $document = $this->dbDocumentHandler->getById($this->dbCollection, $job_id);
+      $document = $this->dbDocumentHandler->getById(
+        $this->dbCollection->getName(),
+        $job_id,
+      );
     }
-    catch (ArangoDBException $e) {
-      throw new \InvalidArgumentException('', 404, $e);
+    catch (ArangoDBException $exception) {
+      // @todo Check the error code.
+      throw new \InvalidArgumentException('', 404, $exception);
     }
 
     return $this

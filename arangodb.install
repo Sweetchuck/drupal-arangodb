@@ -13,8 +13,12 @@ use Drupal\Core\Cache\Cache;
 
 /**
  * Implements hook_requirements().
+ *
+ * @phpstan-param drupal-core-requirements-phase $phase
+ *
+ * @phpstan-return array<string, drupal-core-requirement>
  */
-function arangodb_requirements($phase) {
+function arangodb_requirements($phase): array {
   $return = [];
 
   if ($phase === 'runtime') {
@@ -40,10 +44,10 @@ function arangodb_requirements($phase) {
         // @todo May that collection is not exists yet.
         $collectionHandler->count(reset($info['binNames']));
       }
-      catch (\Throwable $e) {
+      catch (\Throwable $exception) {
         $return["arangodb_connection_{$connectionId}"]['severity'] = REQUIREMENT_ERROR;
         $return["arangodb_connection_{$connectionId}"]['title'] = t('ArangoDB: Connection failed');
-        $return["arangodb_connection_{$connectionId}"]['value'] .= ' | ' . $e->getMessage();
+        $return["arangodb_connection_{$connectionId}"]['value'] .= ' | ' . $exception->getMessage();
       }
     }
   }

@@ -29,8 +29,14 @@ class BackendFactory implements CacheFactoryInterface {
 
   protected LoggerInterface $logger;
 
-  protected array $storageOptions = [];
+  /**
+   * @phpstan-var drupal-arangodb-cache-backend-options
+   */
+  protected array $storageOptions;
 
+  /**
+   * @phpstan-param drupal-arangodb-cache-backend-options $storageOptions
+   */
   public function __construct(
     ConnectionFactoryInterface $connectionFactory,
     string $connectionName,
@@ -68,6 +74,9 @@ class BackendFactory implements CacheFactoryInterface {
     return new Backend($pool);
   }
 
+  /**
+   * @phpstan-return drupal-arangodb-cache-backend-options
+   */
   protected function getFinalStorageOptions(): array {
     return array_replace_recursive(
       $this->getDefaultStorageOptions(),
@@ -89,6 +98,9 @@ class BackendFactory implements CacheFactoryInterface {
     return $pool;
   }
 
+  /**
+   * @phpstan-return drupal-arangodb-cache-backend-options
+   */
   protected function getDefaultStorageOptions(): array {
     return [
       'collection_name_pattern' => 'cache_{{ bin }}',

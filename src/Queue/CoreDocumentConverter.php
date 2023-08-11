@@ -65,6 +65,8 @@ class CoreDocumentConverter implements CoreDocumentConverterInterface {
   }
 
   /**
+   * @phpstan-param drupal-core-queue-item $item
+   *
    * @throws \ArangoDBClient\ClientException
    */
   public function itemToDocument(string $queueName, object $item): Document {
@@ -83,7 +85,12 @@ class CoreDocumentConverter implements CoreDocumentConverterInterface {
    * @throws \ArangoDBClient\ClientException
    */
   public function dataToDocument(string $queueName, mixed $data): Document {
-    return $this->itemToDocument($queueName, (object) ['data' => $data]);
+    return $this->itemToDocument(
+      $queueName, (object) [
+        'item_id' => NULL,
+        'data' => $data,
+      ],
+    );
   }
 
 }

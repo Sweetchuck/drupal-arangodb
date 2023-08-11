@@ -17,10 +17,16 @@ class MainSimpleFactoryTest extends TestCase {
 
   protected string $defaultServiceId = 'keyvalue.database';
 
+  /**
+   * @phpstan-param array<string, mixed> $parameters
+   */
   protected function createInstance(ContainerInterface $container, array $parameters): KeyValueFactoryInterface {
     return new MainSimpleFactory($container, $parameters);
   }
 
+  /**
+   * @phpstan-return array<string, mixed>
+   */
   public function casesGet(): array {
     return [
       'empty parameters' => [
@@ -105,6 +111,8 @@ class MainSimpleFactoryTest extends TestCase {
   }
 
   /**
+   * @phpstan-param array<string, mixed> $parameters
+   *
    * @dataProvider casesGet
    */
   public function testGet(string $expectedServiceId, array $parameters, string $collection): void {

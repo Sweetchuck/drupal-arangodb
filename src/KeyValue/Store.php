@@ -52,10 +52,13 @@ class Store implements KeyValueStoreExpirableInterface {
     return $this;
   }
 
-  public function __construct($collection) {
+  public function __construct(string $collection) {
     $this->collectionName = $collection;
   }
 
+  /**
+   * @phpstan-return array<string, string>
+   */
   public function getDbCollectionNamePlaceholderValues(): array {
     return [
       '{{ collection }}' => $this->getCollectionName(),
@@ -88,6 +91,10 @@ class Store implements KeyValueStoreExpirableInterface {
   /**
    * {@inheritdoc}
    *
+   * @phpstan-param array<string> $keys
+   *
+   * @phpstan-return array<string, mixed>
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function getMultiple(array $keys) {
@@ -105,6 +112,8 @@ class Store implements KeyValueStoreExpirableInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-return array<string, mixed>
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -124,6 +133,8 @@ class Store implements KeyValueStoreExpirableInterface {
   /**
    * {@inheritdoc}
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function set($key, $value) {
@@ -134,6 +145,8 @@ class Store implements KeyValueStoreExpirableInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -151,7 +164,7 @@ class Store implements KeyValueStoreExpirableInterface {
    * @throws \ArangoDBClient\Exception
    * @throws \ArangoDBClient\ServerException
    */
-  protected function doSet(string $key, mixed $value, ?int $expire) {
+  protected function doSet(string $key, mixed $value, ?int $expire): void {
     try {
       $this->doUpsert($key, $value, $expire);
     }
@@ -253,6 +266,10 @@ class Store implements KeyValueStoreExpirableInterface {
   /**
    * {@inheritdoc}
    *
+   * @phpstan-param array<string, mixed> $data
+   *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function setMultiple(array $data) {
@@ -262,6 +279,10 @@ class Store implements KeyValueStoreExpirableInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string, mixed> $data
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -276,9 +297,11 @@ class Store implements KeyValueStoreExpirableInterface {
   }
 
   /**
+   * @phpstan-param array<string, mixed> $keyValuePairs
+   *
    * @throws \ArangoDBClient\Exception
    */
-  protected function doSetMultiple(array $keyValuePairs, ?int $expire) {
+  protected function doSetMultiple(array $keyValuePairs, ?int $expire): void {
     if (!$keyValuePairs) {
       return;
     }
@@ -332,6 +355,8 @@ class Store implements KeyValueStoreExpirableInterface {
   /**
    * {@inheritdoc}
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function delete($key) {
@@ -340,6 +365,10 @@ class Store implements KeyValueStoreExpirableInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @param string[] $keys
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -379,6 +408,8 @@ class Store implements KeyValueStoreExpirableInterface {
   /**
    * {@inheritdoc}
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function deleteAll() {
@@ -409,6 +440,8 @@ class Store implements KeyValueStoreExpirableInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -486,6 +519,8 @@ class Store implements KeyValueStoreExpirableInterface {
   }
 
   /**
+   * @param null|string[] $keys
+   *
    * @phpstan-return array<string, \ArangoDBClient\Document>
    *
    * @throws \ArangoDBClient\Exception
@@ -534,7 +569,7 @@ class Store implements KeyValueStoreExpirableInterface {
 
     /** @var \ArangoDBClient\Document $document */
     foreach ($result as $document) {
-      $documents[$document->get('key')] = $document;
+      $documents[(string) $document->get('key')] = $document;
     }
 
     return $documents;

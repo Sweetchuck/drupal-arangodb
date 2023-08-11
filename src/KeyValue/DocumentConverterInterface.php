@@ -9,8 +9,14 @@ use Sweetchuck\CacheBackend\ArangoDb\SerializerInterface;
 
 interface DocumentConverterInterface {
 
+  /**
+   * @phpstan-return class-string
+   */
   public function getDocumentClass(): string;
 
+  /**
+   * @phpstan-param class-string $documentClass
+   */
   public function setDocumentClass(string $documentClass): static;
 
   public function getSerializer(): SerializerInterface;
@@ -22,6 +28,9 @@ interface DocumentConverterInterface {
     ?int $expire,
   ): Document;
 
+  /**
+   * @phpstan-return drupal-arangodb-keyvalue-entry
+   */
   public function documentToEntry(Document $document): array;
 
 }

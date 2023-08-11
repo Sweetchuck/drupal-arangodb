@@ -8,7 +8,6 @@ use ArangoDBClient\Statement;
 use Drupal\arangodb\Flood\Backend;
 use Drupal\arangodb\Flood\DocumentConverter;
 use Drupal\arangodb\Flood\SchemaManager;
-use Drupal\Component\Datetime\TimeInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\arangodb\Traits\ConnectionTrait;
 use Drupal\Tests\arangodb\Traits\TestTime;
@@ -24,13 +23,15 @@ class BackendTest extends KernelTestBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-var array<string>
    */
   protected static $modules = [
     'system',
     'arangodb',
   ];
 
-  protected TimeInterface $time;
+  protected TestTime $time;
 
   /**
    * {@inheritdoc}
@@ -83,6 +84,7 @@ class BackendTest extends KernelTestBase {
     $threshold = 1;
     $window_expired = -1;
     $name = 'flood_test_cleanup';
+    /** @var \Drupal\Core\CronInterface $cron */
     $cron = $this->container->get('cron');
 
     static::assertTrue($flood->isAllowed($name, $threshold));

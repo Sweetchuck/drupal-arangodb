@@ -10,12 +10,21 @@ use Sweetchuck\CacheBackend\ArangoDb\SerializerInterface;
 
 class DocumentConverter implements DocumentConverterInterface {
 
+  /**
+   * @phpstan-var class-string
+   */
   protected string $documentClass = Document::class;
 
+  /**
+   * @phpstan-return class-string
+   */
   public function getDocumentClass(): string {
     return $this->documentClass ?: Document::class;
   }
 
+  /**
+   * @phpstan-param class-string $documentClass
+   */
   public function setDocumentClass(string $documentClass): static {
     $this->documentClass = $documentClass;
 
@@ -45,6 +54,8 @@ class DocumentConverter implements DocumentConverterInterface {
   }
 
   /**
+   * {@inheritdoc}
+   *
    * @throws \ArangoDBClient\ClientException
    */
   public function logEntryToDocument($level, string|\Stringable $message, array $context): Document {

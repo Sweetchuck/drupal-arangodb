@@ -53,6 +53,9 @@ trait ConnectionTrait {
     );
   }
 
+  /**
+   * @phpstan-return array<string, array<string, mixed>>
+   */
   protected function getConnectionOptions(): array {
     return [
       'default' => [

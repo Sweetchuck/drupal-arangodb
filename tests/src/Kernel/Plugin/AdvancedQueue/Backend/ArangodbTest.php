@@ -19,6 +19,11 @@ class ArangodbTest extends KernelTestBase {
 
   use ConnectionTrait;
 
+  /**
+   * {@inheritdoc}
+   *
+   * @phpstan-var array<string>
+   */
   protected static $modules = [
     'advancedqueue',
     'arangodb',
@@ -27,8 +32,6 @@ class ArangodbTest extends KernelTestBase {
   protected int $currentTime = 0;
 
   /**
-   * @throws \ArangoDBClient\Exception
-   * @throws \ArangoDBClient\ClientException
    * @throws \Exception
    */
   protected function setUp(): void {
@@ -39,7 +42,7 @@ class ArangodbTest extends KernelTestBase {
     $this->currentTime = 635814000;
     $currentTime =& $this->currentTime;
     $time = $this->prophesize(TimeInterface::class);
-    $time->getCurrentTime()->will(function () use (&$currentTime) : int {
+    $time->getCurrentTime()->will(function () use (&$currentTime): int {
       return $currentTime;
     });
     $this->container->set('datetime.time', $time->reveal());
@@ -84,6 +87,9 @@ class ArangodbTest extends KernelTestBase {
     return $queue;
   }
 
+  /**
+   * @throws \Exception
+   */
   public function testQueue(): void {
     $this->currentTime = 635814000;
 
@@ -93,9 +99,14 @@ class ArangodbTest extends KernelTestBase {
     $job4 = Job::create('simple', ['test' => '4']);
 
     $queue1 = $this->createQueue('q1', 'shared');
-    $queue2 = $this->createQueue('q2', 'shared');
+    /** @var \Drupal\arangodb\Plugin\AdvancedQueue\Backend\Arangodb $queue1Backend */
+    $queue1Backend = $queue1->getBackend();
 
-    $queue1->getBackend()->enqueueJobs([$job1, $job3]);
+    $queue2 = $this->createQueue('q2', 'shared');
+    /** @var \Drupal\arangodb\Plugin\AdvancedQueue\Backend\Arangodb $queue2Backend */
+    $queue2Backend = $queue2->getBackend();
+
+    $queue1Backend->enqueueJobs([$job1, $job3]);
 
     static::assertQueuedJob('q1', 0, $job1);
     static::assertQueuedJob('q1', 0, $job3);
@@ -106,7 +117,7 @@ class ArangodbTest extends KernelTestBase {
         Job::STATE_SUCCESS => 0,
         Job::STATE_FAILURE => 0,
       ],
-      $queue1->getBackend()->countJobs(),
+      $queue1Backend->countJobs(),
     );
 
     // Update the jobs to match how they'll look when claimed.
@@ -115,12 +126,12 @@ class ArangodbTest extends KernelTestBase {
     $job3->setExpiresTime($this->currentTime + 5);
     $job3->setState(Job::STATE_PROCESSING);
 
-    static::assertEquals($job1, $queue1->getBackend()->claimJob());
-    static::assertEquals($job3, $queue1->getBackend()->claimJob());
-    static::assertNull($queue1->getBackend()->claimJob());
+    static::assertEquals($job1, $queue1Backend->claimJob());
+    static::assertEquals($job3, $queue1Backend->claimJob());
+    static::assertNull($queue1Backend->claimJob());
 
-    $queue2->getBackend()->enqueueJob($job2);
-    $queue2->getBackend()->enqueueJob($job4);
+    $queue2Backend->enqueueJob($job2);
+    $queue2Backend->enqueueJob($job4);
     static::assertSame(
       [
         Job::STATE_QUEUED => 2,
@@ -128,11 +139,11 @@ class ArangodbTest extends KernelTestBase {
         Job::STATE_SUCCESS => 0,
         Job::STATE_FAILURE => 0,
       ],
-      $queue2->getBackend()->countJobs(),
+      $queue2Backend->countJobs(),
     );
 
-    $queue2->getBackend()->deleteJob($job2->getId());
-    static::assertSame(Job::STATE_PROCESSING, $queue2->getBackend()->claimJob()->getState());
+    $queue2Backend->deleteJob($job2->getId());
+    static::assertSame(Job::STATE_PROCESSING, $queue2Backend->claimJob()->getState());
     static::assertSame(
       [
         Job::STATE_QUEUED => 0,
@@ -140,16 +151,16 @@ class ArangodbTest extends KernelTestBase {
         Job::STATE_SUCCESS => 0,
         Job::STATE_FAILURE => 0,
       ],
-      $queue2->getBackend()->countJobs(),
+      $queue2Backend->countJobs(),
     );
 
     // Confirm fail -> retry -> success.
     $job4->setState(Job::STATE_FAILURE);
-    $queue2->getBackend()->onFailure($job4);
+    $queue2Backend->onFailure($job4);
     static::assertEquals($this->currentTime, $job4->getProcessedTime());
     static::assertEmpty($job4->getExpiresTime());
 
-    $queue2->getBackend()->retryJob($job4, 9);
+    $queue2Backend->retryJob($job4, 9);
     static::assertEquals(Job::STATE_QUEUED, $job4->getState());
     static::assertEquals(1, $job4->getNumRetries());
     static::assertEquals($this->currentTime + 9, $job4->getAvailableTime());
@@ -158,15 +169,15 @@ class ArangodbTest extends KernelTestBase {
     $this->currentTime += 10;
     $job4->setState(Job::STATE_PROCESSING);
     $job4->setExpiresTime($this->currentTime + 5);
-    static::assertEquals($job4, $queue2->getBackend()->claimJob());
+    static::assertEquals($job4, $queue2Backend->claimJob());
 
     $job4->setState(Job::STATE_SUCCESS);
-    $queue2->getBackend()->onSuccess($job4);
+    $queue2Backend->onSuccess($job4);
     static::assertEquals($this->currentTime, $job4->getProcessedTime());
     static::assertEmpty($job4->getExpiresTime());
 
-    $queue2->getBackend()->enqueueJob($job1);
-    $queue2->getBackend()->enqueueJob($job2);
+    $queue2Backend->enqueueJob($job1);
+    $queue2Backend->enqueueJob($job2);
     static::assertEquals(
       [
         Job::STATE_QUEUED => 2,
@@ -174,25 +185,25 @@ class ArangodbTest extends KernelTestBase {
         Job::STATE_SUCCESS => 1,
         Job::STATE_FAILURE => 0,
       ],
-      $queue2->getBackend()->countJobs(),
+      $queue2Backend->countJobs(),
     );
 
-    $queue1->getBackend()->deleteQueue();
-    static::assertNull($queue1->getBackend()->claimJob());
+    $queue1Backend->deleteQueue();
+    static::assertNull($queue1Backend->claimJob());
   }
 
   public function testLoadJob(): void {
     $job = Job::create('simple', ['test' => '1']);
 
-    $queue = $this->createQueue('arangodb_shared', 'shared');
-    $backend = $queue->getBackend();
-    $backend->enqueueJob($job);
-    $claimed_job = $backend->claimJob();
-    $loaded_job = $backend->loadJob($claimed_job->getId());
-    static::assertEquals($loaded_job, $claimed_job);
+    $queue1 = $this->createQueue('arangodb_shared', 'shared');
+    $queue1Backend = $queue1->getBackend();
+    $queue1Backend->enqueueJob($job);
+    $claimedJob = $queue1Backend->claimJob();
+    $loadedJob = $queue1Backend->loadJob($claimedJob->getId());
+    static::assertEquals($loadedJob, $claimedJob);
   }
 
-  public static function assertQueuedJob(string $expected_queue_id, $expected_delay, Job $job): void {
+  public static function assertQueuedJob(string $expected_queue_id, int $expected_delay, Job $job): void {
     static::assertNotEmpty($job->getId());
     static::assertSame($expected_queue_id, $job->getQueueId());
     static::assertSame(Job::STATE_QUEUED, $job->getState());

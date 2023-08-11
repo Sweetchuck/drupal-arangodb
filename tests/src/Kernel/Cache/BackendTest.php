@@ -30,6 +30,8 @@ class BackendTest extends KernelTestBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-var array<string>
    */
   protected static $modules = [
     'arangodb',

@@ -24,10 +24,16 @@ class Backend extends LockBackendAbstract {
 
   protected int|float $minTimeout = 0.001;
 
+  /**
+   * @phpstan-var drupal-arangodb-lock-options
+   */
   protected array $options;
 
   protected DocumentConverterInterface $documentConverter;
 
+  /**
+   * @phpstan-param drupal-arangodb-lock-options $options
+   */
   public function __construct(
     ConnectionFactory $connectionFactory,
     string $connectionName,
@@ -51,6 +57,8 @@ class Backend extends LockBackendAbstract {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-return bool
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -177,6 +185,8 @@ class Backend extends LockBackendAbstract {
   /**
    * {@inheritdoc}
    *
+   * @return void
+   *
    * @throws \ArangoDBClient\Exception
    */
   public function release($name) {
@@ -193,6 +203,8 @@ class Backend extends LockBackendAbstract {
 
   /**
    * {@inheritdoc}
+   *
+   * @return void
    *
    * @throws \ArangoDBClient\Exception
    */
@@ -252,7 +264,7 @@ class Backend extends LockBackendAbstract {
   /**
    * @throws \ArangoDBClient\Exception
    */
-  protected function releaseByDocument(string $name) {
+  protected function releaseByDocument(string $name): void {
     $this
       ->dbDocumentHandler
       ->remove($this->locks[$name]);
@@ -263,7 +275,7 @@ class Backend extends LockBackendAbstract {
   /**
    * @throws \ArangoDBClient\Exception
    */
-  protected function releaseByName(string $name) {
+  protected function releaseByName(string $name): void {
     $query = <<< AQL
     FOR doc in @@collection
       FILTER
@@ -291,7 +303,7 @@ class Backend extends LockBackendAbstract {
   /**
    * @throws \ArangoDBClient\Exception
    */
-  protected function releaseByLockId(string $lockId) {
+  protected function releaseByLockId(string $lockId): void {
     $query = <<< AQL
     FOR doc in @@collection
       FILTER

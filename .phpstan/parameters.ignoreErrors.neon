@@ -1,2 +1,266 @@
 parameters:
-	ignoreErrors: []
+	ignoreErrors:
+		-
+			message: "#^Method Drupal\\\\arangodb\\\\Cache\\\\BackendFactory\\:\\:getFinalStorageOptions\\(\\) should return array\\{collection_name_pattern\\: string\\} but returns array\\.$#"
+			count: 1
+			path: ../src/Cache/BackendFactory.php
+
+		-
+			message: "#^Property Drupal\\\\arangodb\\\\Commands\\\\DevelHelperQueueAdvancedCommands\\:\\:\\$queueStorage \\(Drupal\\\\Core\\\\Config\\\\Entity\\\\ConfigEntityStorageInterface\\) does not accept Drupal\\\\Core\\\\Entity\\\\EntityStorageInterface\\.$#"
+			count: 1
+			path: ../src/Commands/DevelHelperQueueAdvancedCommands.php
+
+		-
+			message: "#^Call to an undefined method Robo\\\\Collection\\\\CollectionBuilder\\|Robo\\\\Collection\\\\TaskForEach\\:\\:getState\\(\\)\\.$#"
+			count: 1
+			path: ../src/Commands/KeyValueCommands.php
+
+		-
+			message: "#^Call to an undefined method Robo\\\\Collection\\\\CollectionBuilder\\|Robo\\\\Collection\\\\TaskForEach\\:\\:iterationMessage\\(\\)\\.$#"
+			count: 1
+			path: ../src/Commands/KeyValueCommands.php
+
+		-
+			message: "#^Call to an undefined method Robo\\\\Collection\\\\TaskForEach\\:\\:deferTaskConfiguration\\(\\)\\.$#"
+			count: 1
+			path: ../src/Commands/KeyValueCommands.php
+
+		-
+			message: "#^Method Drupal\\\\arangodb\\\\KeyValue\\\\DocumentConverter\\:\\:documentToEntry\\(\\) should return array\\{key\\: string, value\\: mixed, expire\\?\\: int\\} but returns array\\<mixed, mixed\\>\\.$#"
+			count: 1
+			path: ../src/KeyValue/DocumentConverter.php
+
+		-
+			message: "#^Unsafe usage of new static\\(\\)\\.$#"
+			count: 1
+			path: ../src/Plugin/AdvancedQueue/Backend/Arangodb.php
+
+		-
+			message: "#^Method Drupal\\\\arangodb\\\\Queue\\\\CoreStorage\\:\\:claimItem\\(\\) should return object\\{item_id\\: int\\|string\\|null, data\\: mixed\\}\\|false but returns object\\.$#"
+			count: 1
+			path: ../src/Queue/CoreStorage.php
+
+		-
+			message: "#^Method Drupal\\\\arangodb\\\\Queue\\\\CoreStorageFactory\\:\\:getFinalOptions\\(\\) should return array\\{collection_name_pattern\\: string\\} but returns array\\.$#"
+			count: 1
+			path: ../src/Queue/CoreStorageFactory.php
+
+		-
+			message: "#^Method Drupal\\\\arangodb\\\\Utils\\:\\:groupCacheBinsByConnections\\(\\) should return array\\<int, array\\{connection\\: ArangoDBClient\\\\Connection, binNames\\: array\\<string, string\\>\\}\\> but returns array\\<int, array\\{connection\\: ArangoDBClient\\\\Connection, binNames\\: non\\-empty\\-array\\<int\\|string, string\\>\\}\\>\\.$#"
+			count: 1
+			path: ../src/Utils.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$created\\.$#"
+			count: 8
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$data\\.$#"
+			count: 8
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$expire\\.$#"
+			count: 4
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$valid\\.$#"
+			count: 4
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Cannot access offset 'collection_name…' on array\\|bool\\|float\\|int\\|string\\|UnitEnum\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Cannot access property \\$data on object\\|false\\.$#"
+			count: 13
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Method Drupal\\\\Tests\\\\arangodb\\\\Kernel\\\\Cache\\\\BackendTest\\:\\:createCacheBackend\\(\\) has parameter \\$bin with no type specified\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Method Drupal\\\\Tests\\\\arangodb\\\\Kernel\\\\Cache\\\\BackendTest\\:\\:createCacheBackend\\(\\) should return Drupal\\\\arangodb\\\\Cache\\\\Backend but returns Drupal\\\\Core\\\\Cache\\\\CacheBackendInterface\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$connections of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects ArrayAccess\\<string, ArangoDBClient\\\\Connection\\>, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$items of method Drupal\\\\arangodb\\\\Cache\\\\Backend\\:\\:setMultiple\\(\\) expects array\\<string, array\\{data\\: mixed, tags\\: array\\<string\\>, expire\\: float\\|int\\|null, created\\?\\: float\\|int\\|null\\}\\>, array\\{cid_1\\: array\\{data\\: 1\\}, cid_2\\: array\\{data\\: 2\\}, cid_3\\: array\\{data\\: array\\{1, 2\\}\\}, cid_4\\: array\\{data\\: 1, expire\\: int\\}, cid_5\\: array\\{data\\: 1, tags\\: array\\{'test\\:a', 'test\\:b'\\}\\}\\} given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$items of method Drupal\\\\arangodb\\\\Cache\\\\Backend\\:\\:setMultiple\\(\\) expects array\\<string, array\\{data\\: mixed, tags\\: array\\<string\\>, expire\\: float\\|int\\|null, created\\?\\: float\\|int\\|null\\}\\>, array\\{exception_test_1\\: array\\{data\\: 1, tags\\: array\\{\\}\\}, exception_test_2\\: array\\{data\\: 2, tags\\: array\\{'valid'\\}\\}, exception_test_3\\: array\\{data\\: 3, tags\\: array\\{node\\: array\\{3, 5, 7\\}\\}\\}\\} given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#3 \\$settings of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects Drupal\\\\Core\\\\Site\\\\Settings, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#3 \\$validator of class Drupal\\\\arangodb\\\\Cache\\\\BackendFactory constructor expects Sweetchuck\\\\CacheBackend\\\\ArangoDb\\\\ValidatorInterface, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#4 \\$documentConverter of class Drupal\\\\arangodb\\\\Cache\\\\BackendFactory constructor expects Sweetchuck\\\\CacheBackend\\\\ArangoDb\\\\CacheDocumentConverterInterface, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#4 \\$tags of method Drupal\\\\arangodb\\\\Cache\\\\Backend\\:\\:set\\(\\) expects array\\<string\\>, array\\<string, array\\<int, int\\>\\> given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#5 \\$serializer of class Drupal\\\\arangodb\\\\Cache\\\\BackendFactory constructor expects Sweetchuck\\\\CacheBackend\\\\ArangoDb\\\\SerializerInterface, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#6 \\$schemaManager of class Drupal\\\\arangodb\\\\Cache\\\\BackendFactory constructor expects Sweetchuck\\\\CacheBackend\\\\ArangoDb\\\\SchemaManagerInterface, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#7 \\$logger of class Drupal\\\\arangodb\\\\Cache\\\\BackendFactory constructor expects Psr\\\\Log\\\\LoggerInterface, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#8 \\$storageOptions of class Drupal\\\\arangodb\\\\Cache\\\\BackendFactory constructor expects array\\{collection_name_pattern\\: string\\}, non\\-empty\\-array\\|\\(ArrayAccess&UnitEnum\\) given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Property Drupal\\\\Tests\\\\arangodb\\\\Kernel\\\\Cache\\\\BackendTest\\:\\:\\$time \\(Drupal\\\\Component\\\\Datetime\\\\TimeInterface\\) does not accept object\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Cache/BackendTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$connections of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects ArrayAccess\\<string, ArangoDBClient\\\\Connection\\>, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Flood/BackendTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$time of class Drupal\\\\arangodb\\\\Flood\\\\DocumentConverter constructor expects Drupal\\\\Component\\\\Datetime\\\\TimeInterface, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Flood/BackendTest.php
+
+		-
+			message: "#^Parameter \\#3 \\$settings of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects Drupal\\\\Core\\\\Site\\\\Settings, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Flood/BackendTest.php
+
+		-
+			message: "#^Parameter \\#5 \\$requestStack of class Drupal\\\\arangodb\\\\Flood\\\\Backend constructor expects Symfony\\\\Component\\\\HttpFoundation\\\\RequestStack, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Flood/BackendTest.php
+
+		-
+			message: "#^Parameter \\#6 \\$time of class Drupal\\\\arangodb\\\\Flood\\\\Backend constructor expects Drupal\\\\Component\\\\Datetime\\\\TimeInterface, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Flood/BackendTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$connections of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects ArrayAccess\\<string, ArangoDBClient\\\\Connection\\>, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/KeyValue/StoreTest.php
+
+		-
+			message: "#^Parameter \\#3 \\$settings of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects Drupal\\\\Core\\\\Site\\\\Settings, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/KeyValue/StoreTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$connections of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects ArrayAccess\\<string, ArangoDBClient\\\\Connection\\>, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Lock/BackendTest.php
+
+		-
+			message: "#^Parameter \\#3 \\$settings of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects Drupal\\\\Core\\\\Site\\\\Settings, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Lock/BackendTest.php
+
+		-
+			message: "#^Method Drupal\\\\Tests\\\\arangodb\\\\Kernel\\\\Logger\\\\BackendTest\\:\\:getLastDocument\\(\\) should return ArangoDBClient\\\\Document\\|null but returns array\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Logger/BackendTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$connections of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects ArrayAccess\\<string, ArangoDBClient\\\\Connection\\>, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Logger/BackendTest.php
+
+		-
+			message: "#^Parameter \\#3 \\$settings of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects Drupal\\\\Core\\\\Site\\\\Settings, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Logger/BackendTest.php
+
+		-
+			message: "#^Call to an undefined method Drupal\\\\advancedqueue\\\\Plugin\\\\AdvancedQueue\\\\Backend\\\\BackendInterface\\:\\:loadJob\\(\\)\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Plugin/AdvancedQueue/Backend/ArangodbTest.php
+
+		-
+			message: "#^Call to an undefined method Prophecy\\\\Prophecy\\\\ObjectProphecy\\:\\:getCurrentTime\\(\\)\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Plugin/AdvancedQueue/Backend/ArangodbTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$connections of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects ArrayAccess\\<string, ArangoDBClient\\\\Connection\\>, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Plugin/AdvancedQueue/Backend/ArangodbTest.php
+
+		-
+			message: "#^Parameter \\#3 \\$settings of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects Drupal\\\\Core\\\\Site\\\\Settings, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Plugin/AdvancedQueue/Backend/ArangodbTest.php
+
+		-
+			message: "#^Cannot access property \\$data on object\\{item_id\\: int\\|string\\|null, data\\: mixed\\}\\|false\\.$#"
+			count: 4
+			path: ../tests/src/Kernel/Queue/CoreStorageTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$connections of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects ArrayAccess\\<string, ArangoDBClient\\\\Connection\\>, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Queue/CoreStorageTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$documentConverter of method Drupal\\\\arangodb\\\\Queue\\\\CoreStorage\\:\\:setDocumentConverter\\(\\) expects Drupal\\\\arangodb\\\\Queue\\\\CoreDocumentConverterInterface, object given\\.$#"
+			count: 2
+			path: ../tests/src/Kernel/Queue/CoreStorageTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$item of method Drupal\\\\arangodb\\\\Queue\\\\CoreStorage\\:\\:deleteItem\\(\\) expects object\\{item_id\\: int\\|string\\|null, data\\: mixed\\}, object\\{item_id\\: int\\|string\\|null, data\\: mixed\\}\\|false given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Queue/CoreStorageTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$schemaManager of method Drupal\\\\arangodb\\\\Queue\\\\CoreStorage\\:\\:setSchemaManager\\(\\) expects Sweetchuck\\\\CacheBackend\\\\ArangoDb\\\\SchemaManagerInterface, object given\\.$#"
+			count: 2
+			path: ../tests/src/Kernel/Queue/CoreStorageTest.php
+
+		-
+			message: "#^Parameter \\#3 \\$settings of class Drupal\\\\arangodb\\\\ConnectionFactory constructor expects Drupal\\\\Core\\\\Site\\\\Settings, object given\\.$#"
+			count: 1
+			path: ../tests/src/Kernel/Queue/CoreStorageTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$documentClass of method Drupal\\\\arangodb\\\\Queue\\\\AdvancedDocumentConverter\\:\\:setDocumentClass\\(\\) expects class\\-string, string given\\.$#"
+			count: 1
+			path: ../tests/src/Unit/Queue/AdvancedDocumentConverterTest.php

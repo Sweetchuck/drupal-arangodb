@@ -12,6 +12,11 @@ interface DocumentConverterInterface {
 
   public function setDocumentClass(string $documentClass): static;
 
+  /**
+   * @param int|string $level
+   *
+   * @phpstan-param array<string, mixed> $context
+   */
   public function logEntryToDocument($level, string|\Stringable $message, array $context): Document;
 
 }

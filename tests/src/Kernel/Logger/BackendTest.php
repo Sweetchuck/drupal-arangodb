@@ -22,6 +22,8 @@ class BackendTest extends KernelTestBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-var array<string>
    */
   protected static $modules = [
     'arangodb',
@@ -68,6 +70,9 @@ class BackendTest extends KernelTestBase {
     );
   }
 
+  /**
+   * @phpstan-return array<string, mixed>
+   */
   public function casesLog(): array {
     return [
       'basic' => [
@@ -104,6 +109,9 @@ class BackendTest extends KernelTestBase {
   }
 
   /**
+   * @phpstan-param array<string, mixed> $expected
+   * @phpstan-param array<string, mixed> $context
+   *
    * @dataProvider casesLog
    *
    * @throws \Exception
@@ -126,7 +134,7 @@ class BackendTest extends KernelTestBase {
    */
   protected function getLastDocument(Backend $logger): ?Document {
     $query = <<< AQL
-      FOR doc in @@collection
+      FOR doc in @@dbCollection
         SORT doc._key DESC
         LIMIT 1
         RETURN doc
@@ -137,7 +145,7 @@ class BackendTest extends KernelTestBase {
       [
         'query' => $query,
         'bindVars' => [
-          '@collection' => $logger->getDbCollectionName('test'),
+          '@dbCollection' => $logger->getDbCollectionName('test'),
         ],
       ],
     );
